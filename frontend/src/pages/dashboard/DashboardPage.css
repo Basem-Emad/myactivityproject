@@ -1,0 +1,109 @@
+.dashboard-page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.dashboard-page__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dashboard-page__month-select {
+    padding: 8px 12px;
+    border: 1px solid var(--color-control-border);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+}
+
+.dashboard-page__summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.dashboard-page__card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dashboard-page__card-label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.dashboard-page__card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.dashboard-page__charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.dashboard-page__chart-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.dashboard-page__chart-card--wide {
+    grid-column: 1 / -1;
+}
+
+.dashboard-page__chart-card h2 {
+    font-size: 15px;
+    margin: 0 0 16px;
+}
+
+.dashboard-page__chart-placeholder {
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--color-subtle-background);
+    border-radius: 8px;
+    color: var(--color-text-disabled);
+}
+
+.dashboard-page__chart-placeholder .material-symbols-outlined {
+    font-size: 32px;
+}
+
+.dashboard-page__chart-placeholder p {
+    font-size: 13px;
+    margin: 0;
+}
+
+.dashboard-page__legend {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dashboard-page__legend li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
