@@ -390,3 +390,86 @@ And the team should deliver:
 * Tests for important business logic
 * Setup/run instructions
 * Final integrated demonstration
+
+---
+
+## Backend Setup Guide (Master Data Module)
+
+This section covers how to run the backend locally, specific to the Master Data module (Activity Types & Activity Subjects) developed by Basem Emad.
+
+### Prerequisites
+
+* JDK 17+
+* Docker Desktop (running)
+* Maven (or use the included `mvnw` wrapper)
+
+### 1. Start the Database
+
+From the project root:
+
+```bash
+docker compose up -d
+```
+
+This starts a PostgreSQL 16 container with the following default credentials (override via environment variables for production):
+
+* Database: `activitytracking_db`
+* Username: `activitytracking_user`
+* Password: `activitytracking_pass`
+
+To stop the database (data is preserved):
+
+```bash
+docker compose down
+```
+
+### 2. Configure Environment Variables (Optional)
+
+The backend reads credentials from environment variables with local defaults:
+
+```bash
+DB_USER=activitytracking_user
+DB_PASSWORD=activitytracking_pass
+```
+
+If not set, the defaults above are used automatically (see `backend/src/main/resources/application.properties`).
+
+### 3. Run the Backend
+
+From the `backend/` directory:
+
+```bash
+./mvnw spring-boot:run
+```
+
+Or run `ActivityTrackingApplication.java` directly from your IDE.
+
+The backend starts on `http://localhost:8080`. Flyway automatically applies database migrations on startup.
+
+### 4. Explore the API
+
+* Swagger UI: `http://localhost:8080/swagger-ui.html`
+* OpenAPI spec: `http://localhost:8080/v3/api-docs`
+
+### 5. Run Tests
+
+From the `backend/` directory:
+
+```bash
+./mvnw test
+```
+
+### Master Data Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|--------------|
+| POST | `/api/activity-types` | Create an Activity Type |
+| GET | `/api/activity-types` | List all Activity Types |
+| GET | `/api/activity-types/{id}` | Get an Activity Type by ID |
+| PUT | `/api/activity-types/{id}` | Update an Activity Type |
+| DELETE | `/api/activity-types/{id}` | Deactivate an Activity Type |
+| POST | `/api/activity-subjects` | Create an Activity Subject |
+| GET | `/api/activity-subjects` | List all Activity Subjects |
+| GET | `/api/activity-subjects/{id}` | Get an Activity Subject by ID |
+| PUT | `/api/activity-subjects/{id}` | Update an Activity Subject |
+| DELETE | `/api/activity-subjects/{id}` | Deactivate an Activity Subject |
