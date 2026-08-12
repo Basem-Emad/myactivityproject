@@ -1,5 +1,6 @@
-package com.raya.activitytracking.masterdata.service;
+package com.raya.activitytracking.masterdata.service.impl;
 
+import com.raya.activitytracking.masterdata.service.ActivitySubjectService;
 import com.raya.activitytracking.masterdata.dto.request.ActivitySubjectRequest;
 import com.raya.activitytracking.masterdata.dto.response.ActivitySubjectResponse;
 import com.raya.activitytracking.masterdata.entity.ActivitySubject;
