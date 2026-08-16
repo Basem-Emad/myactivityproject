@@ -1,0 +1,113 @@
+.activity-types-page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.activity-types-page__loading {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.activity-types-page__table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.activity-types-page__table th,
+.activity-types-page__table td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.activity-types-page__table th {
+    background: var(--color-subtle-background);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.activity-types-page__table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.activity-types-page__status {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.activity-types-page__status--active {
+    background: #dcfce7;
+    color: var(--color-success);
+}
+
+.activity-types-page__status--inactive {
+    background: var(--color-subtle-background);
+    color: var(--color-text-disabled);
+}
+
+.activity-types-page__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.activity-types-page__modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.activity-types-page__modal {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.activity-types-page__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.activity-types-page__field input,
+.activity-types-page__field textarea {
+    padding: 8px 12px;
+    border: 1px solid var(--color-control-border);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    resize: vertical;
+}
+
+.activity-types-page__form-error {
+    color: var(--color-danger);
+    font-size: 14px;
+    margin: 0 0 16px;
+}
+
+.activity-types-page__modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
