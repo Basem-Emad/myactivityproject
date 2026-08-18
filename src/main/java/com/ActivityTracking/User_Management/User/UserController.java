@@ -23,6 +23,10 @@ private final UserService userService;
     public User_ getUser(@PathVariable Integer id) {
         return userService.getUserById(id);
     }
+    @GetMapping("/getUserByUsername")
+    public User_ getUserByName(@RequestParam String userName){
+    return userService.getUserByUserName(userName);
+    }
     @PostMapping
     public void registerNewUser(@RequestBody User_ user){
         userService.addNewUser(user);
@@ -32,6 +36,13 @@ private final UserService userService;
     public void deleteUser(
             @PathVariable("userId")Integer Id){
             userService.deleteUser(Id);
+    }
+    @PutMapping("/updateUser/{id}")
+    public User_ updateUser(
+            @PathVariable Integer id,
+            @RequestBody User_ updatedUser) {
+
+        return userService.updateUser(id, updatedUser);
     }
 
 }

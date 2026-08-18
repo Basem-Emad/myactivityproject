@@ -27,7 +27,7 @@ public class UserService {
     }
 
     public void addNewUser(User_ user) {
-        Optional<User_>userByEmail= userRepository.findUserByEmail(user.getEmail());
+        Optional<User_>userByEmail= userRepository.findByEmail(user.getEmail());
         if(userByEmail.isPresent())
             throw new IllegalStateException("Email is taken");
 
@@ -41,5 +41,24 @@ public class UserService {
             throw new IllegalStateException("User with id"+id+"does not exist");
         }
         userRepository.deleteById(id);
+    }
+
+    public User_ getUserByUserName(String userName) {
+
+        return userRepository.findByUserName(userName)
+                .orElse(null);
+    }
+    public User_ updateUser(Integer id, User_ updatedUser) {
+
+        User_ existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        existingUser.setUserName(updatedUser.getUserName());
+        existingUser.setPassword(updatedUser.getPassword());
+        existingUser.setEmail(updatedUser.getEmail());
+        existingUser.setDateOfBirth(updatedUser.getDateOfBirth());
+        existingUser.setGender(updatedUser.getGender());
+
+        return userRepository.save(existingUser);
     }
 }
