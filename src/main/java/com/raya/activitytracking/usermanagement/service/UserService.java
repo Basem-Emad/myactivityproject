@@ -1,21 +1,24 @@
-package com.ActivityTracking.User_Management.User;
+package com.raya.activitytracking.usermanagement.service;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.raya.activitytracking.usermanagement.entity.Role_;
+import com.raya.activitytracking.usermanagement.entity.User_;
+import com.raya.activitytracking.usermanagement.repository.RoleRepository;
+import com.raya.activitytracking.usermanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
 
     public List<User_> getUsers(){
@@ -60,5 +63,17 @@ public class UserService {
         existingUser.setGender(updatedUser.getGender());
 
         return userRepository.save(existingUser);
+    }
+    public User_ assignRole(Integer userId, Integer roleId) {
+
+        User_ user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Role_ role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        user.setRole(role);
+
+        return userRepository.save(user);
     }
 }

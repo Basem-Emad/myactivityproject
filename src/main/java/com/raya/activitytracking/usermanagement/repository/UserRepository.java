@@ -1,5 +1,6 @@
-package com.ActivityTracking.User_Management.User;
+package com.raya.activitytracking.usermanagement.repository;
 
+import com.raya.activitytracking.usermanagement.entity.User_;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

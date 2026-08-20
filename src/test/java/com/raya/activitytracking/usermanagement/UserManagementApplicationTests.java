@@ -1,4 +1,4 @@
-package com.ActivityTracking.User_Management;
+package com.raya.activitytracking.usermanagement;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

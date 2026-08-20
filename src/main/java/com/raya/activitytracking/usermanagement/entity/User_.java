@@ -1,5 +1,6 @@
-package com.ActivityTracking.User_Management.User;
+package com.raya.activitytracking.usermanagement.entity;
 
+import com.raya.activitytracking.usermanagement.utilis.Gender;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -25,6 +26,9 @@ public class User_ {
     private String email;
     private LocalDate dateOfBirth;
     private Gender gender;
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    private Role_ role;
 
     public User_() {
     }
@@ -101,5 +105,13 @@ public class User_ {
 
     public void setGender(Gender gender) {
         this.gender = gender;
+    }
+
+    public Role_ getRole() {
+        return role;
+    }
+
+    public void setRole(Role_ role) {
+        this.role = role;
     }
 }
