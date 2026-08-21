@@ -1,0 +1,120 @@
+.activities-page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+/* ── Filter bar ────────────────────────────────────────────── */
+
+.activities-page__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.activities-page__filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.activities-page__filter-field select,
+.activities-page__filter-field input {
+    padding: 8px 12px;
+    border: 1px solid var(--color-control-border);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    min-width: 160px;
+}
+
+.activities-page__filter-field select:focus,
+.activities-page__filter-field input:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -1px;
+    border-color: var(--color-primary);
+}
+
+/* ── Loading ───────────────────────────────────────────────── */
+
+.activities-page__loading {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ── Data table ────────────────────────────────────────────── */
+
+.activities-page__table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.activities-page__table th,
+.activities-page__table td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.activities-page__table th {
+    background: var(--color-subtle-background);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.activities-page__table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.activities-page__table tbody tr:hover {
+    background: var(--color-subtle-background);
+}
+
+/* ── Duration badge ────────────────────────────────────────── */
+
+.activities-page__duration {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    color: var(--color-primary);
+}
+
+.activities-page__duration .material-symbols-outlined {
+    font-size: 16px;
+}
+
+/* ── Description cell ──────────────────────────────────────── */
+
+.activities-page__description {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Row actions ───────────────────────────────────────────── */
+
+.activities-page__actions {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+}

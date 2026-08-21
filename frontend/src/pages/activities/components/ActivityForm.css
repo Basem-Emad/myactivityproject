@@ -1,0 +1,81 @@
+.activity-form {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+}
+
+.activity-form__row {
+    display: flex;
+    gap: 16px;
+}
+
+.activity-form__row > .activity-form__field {
+    flex: 1;
+}
+
+.activity-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.activity-form__field input,
+.activity-form__field select,
+.activity-form__field textarea {
+    padding: 8px 12px;
+    border: 1px solid var(--color-control-border);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    resize: vertical;
+}
+
+.activity-form__field input:focus,
+.activity-form__field select:focus,
+.activity-form__field textarea:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -1px;
+    border-color: var(--color-primary);
+}
+
+.activity-form__duration-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-subtle-background);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.activity-form__duration-preview .material-symbols-outlined {
+    font-size: 20px;
+    color: var(--color-primary);
+}
+
+.activity-form__duration-value {
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.activity-form__error {
+    color: var(--color-danger);
+    font-size: 14px;
+    margin: 0 0 16px;
+}
+
+.activity-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 8px;
+}
