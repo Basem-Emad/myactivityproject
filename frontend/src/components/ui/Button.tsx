@@ -1,6 +1,7 @@
 import type {
   ButtonHTMLAttributes,
   ReactNode,
+  Ref,
 } from "react";
 
 import "./Button.css";
@@ -13,6 +14,7 @@ interface ButtonProps
   loading?: boolean;
   icon?: string;
   children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export default function Button({
@@ -22,6 +24,7 @@ export default function Button({
   children,
   className = "",
   disabled,
+  ref,
   ...props
 }: ButtonProps) {
   const isDisabled = disabled || loading;
@@ -29,6 +32,7 @@ export default function Button({
   return (
     <button
       {...props}
+      ref={ref}
       type={props.type ?? "button"}
       className={`button button--${variant} ${className}`.trim()}
       disabled={isDisabled}
