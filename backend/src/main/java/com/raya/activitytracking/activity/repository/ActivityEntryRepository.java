@@ -50,11 +50,12 @@ public interface ActivityEntryRepository extends JpaRepository<ActivityEntry, Lo
     @Query("""
                 SELECT e.activityType.name, SUM(e.durationMinutes)
                 FROM ActivityEntry e
-                WHERE e.date BETWEEN :start AND :end
+                WHERE e.userId = :userId AND e.date BETWEEN :start AND :end
                 GROUP BY e.activityType.name
                 ORDER BY e.activityType.name
             """)
     List<Object[]> sumDurationByTypeBetween(
+            @Param("userId") Long userId,
             @Param("start") LocalDate start,
             @Param("end") LocalDate end);
 
@@ -62,11 +63,12 @@ public interface ActivityEntryRepository extends JpaRepository<ActivityEntry, Lo
     @Query("""
                 SELECT e.activitySubject.name, SUM(e.durationMinutes)
                 FROM ActivityEntry e
-                WHERE e.date BETWEEN :start AND :end
+                WHERE e.userId = :userId AND e.date BETWEEN :start AND :end
                 GROUP BY e.activitySubject.name
                 ORDER BY e.activitySubject.name
             """)
     List<Object[]> sumDurationBySubjectBetween(
+            @Param("userId") Long userId,
             @Param("start") LocalDate start,
             @Param("end") LocalDate end);
 }
