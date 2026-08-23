@@ -11,6 +11,7 @@ import com.raya.activitytracking.reporting.dto.response.MonthlySummaryResponse;
 import com.raya.activitytracking.reporting.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -28,6 +29,7 @@ public class ReportServiceImpl implements ReportService {
     private static final Long TEMP_USER_ID = 1L;
 
     @Override
+    @Transactional(readOnly = true)
     public MonthlySummaryResponse getMonthlySummary(YearMonth month) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
@@ -60,6 +62,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<HoursByTypeResponse> getHoursByType(YearMonth month) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
@@ -75,6 +78,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<HoursBySubjectResponse> getHoursBySubject(YearMonth month) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
@@ -90,6 +94,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DailyTrendResponse> getDailyTrend(YearMonth month) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
@@ -115,6 +120,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MonthlyDetailsResponse getMonthlyDetails(YearMonth month) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
