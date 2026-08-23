@@ -5,6 +5,7 @@ import com.raya.activitytracking.reporting.dto.response.HoursBySubjectResponse;
 import com.raya.activitytracking.reporting.dto.response.HoursByTypeResponse;
 import com.raya.activitytracking.reporting.dto.response.MonthlyDetailsResponse;
 import com.raya.activitytracking.reporting.dto.response.MonthlySummaryResponse;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -252,7 +253,7 @@ class ExcelReportGeneratorTest {
     }
 
     private String cellValue(Row row, int colIdx) {
-        return row.getCell(colIdx).getStringCellValue();
+        return new DataFormatter().formatCellValue(row.getCell(colIdx));
     }
 
     private MonthlyDetailsResponse detailsWithDuration(long durationMinutes) {
