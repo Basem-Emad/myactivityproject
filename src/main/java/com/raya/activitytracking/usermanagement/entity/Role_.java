@@ -1,6 +1,7 @@
 package com.raya.activitytracking.usermanagement.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.HashSet;
@@ -17,7 +18,18 @@ public class Role_ {
     private String name;
 
     @OneToMany(mappedBy = "role")
+    @JsonIgnore
     private Set<User_> users = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "role_permissions",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
+    private Set<Permission_> permissions = new HashSet<>();
+
+
 
     public Role_() {
     }
@@ -32,6 +44,14 @@ public class Role_ {
 
     public void setUsers(Set<User_> users) {
         this.users = users;
+    }
+
+    public Set<Permission_> getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(Set<Permission_> permissions) {
+        this.permissions = permissions;
     }
 
     public Integer getId() {

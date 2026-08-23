@@ -34,6 +34,11 @@ public class UserService {
         if(userByEmail.isPresent())
             throw new IllegalStateException("Email is taken");
 
+        Integer roleId=user.getRole().getId();
+        Role_ role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        user.setRole(role);
         userRepository.save(user);
 
     }
@@ -55,25 +60,29 @@ public class UserService {
 
         User_ existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        Integer roleId=updatedUser.getRole().getId();
+        Role_ role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
 
         existingUser.setUserName(updatedUser.getUserName());
         existingUser.setPassword(updatedUser.getPassword());
         existingUser.setEmail(updatedUser.getEmail());
         existingUser.setDateOfBirth(updatedUser.getDateOfBirth());
         existingUser.setGender(updatedUser.getGender());
-
+        existingUser.setRole(role);
         return userRepository.save(existingUser);
     }
-    public User_ assignRole(Integer userId, Integer roleId) {
-
-        User_ user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Role_ role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
-
-        user.setRole(role);
-
-        return userRepository.save(user);
-    }
+//    public User_ assignRole(Integer userId, Integer roleId) {
+//
+//        User_ user = userRepository.findById(userId)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        Role_ role = roleRepository.findById(roleId)
+//                .orElseThrow(() -> new RuntimeException("Role not found"));
+//
+//        user.setRole(role);
+//
+//        return userRepository.save(user);
+//    }
 }
