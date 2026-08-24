@@ -5,6 +5,7 @@ import com.raya.activitytracking.usermanagement.entity.User_;
 import com.raya.activitytracking.usermanagement.repository.RoleRepository;
 import com.raya.activitytracking.usermanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,11 +15,13 @@ import java.util.Optional;
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<User_> getUsers(){
@@ -30,15 +33,18 @@ public class UserService {
     }
 
     public void addNewUser(User_ user) {
-        Optional<User_>userByEmail= userRepository.findByEmail(user.getEmail());
-        if(userByEmail.isPresent())
-            throw new IllegalStateException("Email is taken");
+        Optional<User_>userByuserName= userRepository.findByUserName(user.getUserName());
+        if(userByuserName.isPresent())
+            throw new IllegalStateException("UserName is taken");
 
         Integer roleId=user.getRole().getId();
         Role_ role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
         user.setRole(role);
+
+        user.setPassword(
+                passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
 
     }
@@ -66,11 +72,17 @@ public class UserService {
 
 
         existingUser.setUserName(updatedUser.getUserName());
-        existingUser.setPassword(updatedUser.getPassword());
         existingUser.setEmail(updatedUser.getEmail());
         existingUser.setDateOfBirth(updatedUser.getDateOfBirth());
         existingUser.setGender(updatedUser.getGender());
         existingUser.setRole(role);
+        if (updatedUser.getPassword() != null
+                && !updatedUser.getPassword().isBlank()) {
+
+            existingUser.setPassword(
+                    passwordEncoder.encode(updatedUser.getPassword())
+            );
+        }
         return userRepository.save(existingUser);
     }
 //    public User_ assignRole(Integer userId, Integer roleId) {

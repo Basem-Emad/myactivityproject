@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table
+@Table(name = "users")
 public class User_ {
 
     @Id
@@ -22,6 +22,7 @@ public class User_ {
     private Integer id;
 
     private String userName;
+    @Column(nullable = false)
     private String password;
     private String email;
     private LocalDate dateOfBirth;
