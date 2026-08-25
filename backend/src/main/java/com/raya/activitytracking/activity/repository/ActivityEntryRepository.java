@@ -43,4 +43,32 @@ public interface ActivityEntryRepository extends JpaRepository<ActivityEntry, Lo
             @Param("startTime") LocalTime startTime,
             @Param("endTime") LocalTime endTime,
             @Param("excludeId") Long excludeId);
+
+    // Reporting aggregation queries
+
+    // Sum duration grouped by Activity Type for a date range
+    @Query("""
+                SELECT e.activityType.name, SUM(e.durationMinutes)
+                FROM ActivityEntry e
+                WHERE e.userId = :userId AND e.date BETWEEN :start AND :end
+                GROUP BY e.activityType.name
+                ORDER BY e.activityType.name
+            """)
+    List<Object[]> sumDurationByTypeBetween(
+            @Param("userId") Long userId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
+
+    // Sum duration grouped by Activity Subject for a date range
+    @Query("""
+                SELECT e.activitySubject.name, SUM(e.durationMinutes)
+                FROM ActivityEntry e
+                WHERE e.userId = :userId AND e.date BETWEEN :start AND :end
+                GROUP BY e.activitySubject.name
+                ORDER BY e.activitySubject.name
+            """)
+    List<Object[]> sumDurationBySubjectBetween(
+            @Param("userId") Long userId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end);
 }
