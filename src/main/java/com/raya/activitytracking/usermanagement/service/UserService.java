@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @Service
 public class UserService {
@@ -24,9 +27,9 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public List<User_> getUsers(){
+   /* public List<User_> getUsers(){
         return userRepository.findAll();
-    }
+    }*/
     public User_ getUserById(Integer id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -84,6 +87,15 @@ public class UserService {
             );
         }
         return userRepository.save(existingUser);
+    }
+    public Page<User_> getAllUsers(int page, int size) {
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size
+        );
+
+        return userRepository.findAll(pageable);
     }
 //    public User_ assignRole(Integer userId, Integer roleId) {
 //

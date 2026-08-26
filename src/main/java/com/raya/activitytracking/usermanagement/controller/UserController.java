@@ -3,6 +3,8 @@ package com.raya.activitytracking.usermanagement.controller;
 import com.raya.activitytracking.usermanagement.service.UserService;
 import com.raya.activitytracking.usermanagement.entity.User_;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -18,11 +20,11 @@ private final UserService userService;
     public UserController(UserService userService) {
         this.userService = userService;
     }
-    @GetMapping()
+    /*@GetMapping()
     @PreAuthorize("hasAuthority('Read_User')")
     public List<User_>getUsers(){
         return userService.getUsers();
-    }
+    }*/
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('Read_User')")
     public User_ getUser(@PathVariable Integer id) {
@@ -52,6 +54,16 @@ private final UserService userService;
             @RequestBody User_ updatedUser) {
 
         return userService.updateUser(id, updatedUser);
+    }
+    @GetMapping
+    @PreAuthorize("hasAuthority('Read_User')")
+    public ResponseEntity<Page<User_>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(
+                userService.getAllUsers(page, size)
+        );
     }
     @GetMapping("/authorities")
     public Object authorities(Authentication authentication ) {
