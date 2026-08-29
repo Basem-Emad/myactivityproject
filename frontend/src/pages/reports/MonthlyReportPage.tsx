@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getMonthlySummary,
   getHoursByType,
@@ -265,6 +266,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 
 /** Empty State */
 function EmptyState({ month }: { month: string }) {
+  const navigate = useNavigate();
   const monthLabel = new Date(month + "-01T00:00:00").toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
@@ -296,7 +298,11 @@ function EmptyState({ month }: { month: string }) {
           <p id="empty-state-desc" className="empty-description">
             Log an activity to generate your monthly report.
           </p>
-          <button type="button" className="add-activity-button">
+            <button
+                type="button"
+                className="add-activity-button"
+                onClick={() => navigate("/activities/new")}
+            >
           <span className="material-symbols-outlined" aria-hidden="true">
             add
           </span>
