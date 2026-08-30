@@ -2,22 +2,26 @@ package com.raya.activitytracking.usermanagement.controller;
 
 import com.raya.activitytracking.usermanagement.service.UserService;
 import com.raya.activitytracking.usermanagement.entity.User;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@AllArgsConstructor
 @RestController
 @RequestMapping(path = "api/v1/user")
+@Tag(
+        name = "User management",
+        description = "Create & Get users"
+)
 public class UserController {
 private final UserService userService;
 
-@Autowired
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
+
+
     /*@GetMapping()
     @PreAuthorize("hasAuthority('Read_User')")
     public List<User_>getUsers(){
