@@ -1,5 +1,6 @@
 package com.raya.activitytracking.usermanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.raya.activitytracking.usermanagement.utilis.Gender;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -31,6 +32,7 @@ public class User {
 
     private String userName;
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
     private String email;
     private LocalDate dateOfBirth;

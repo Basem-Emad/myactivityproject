@@ -11,14 +11,13 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.function.Function;
-
+import org.springframework.beans.factory.annotation.Value;
 @Service
 public class JwtService {
 
-    // Base64 encoded secret key
-    private static final String SECRET_KEY =
-            "VGhpc0lzQVNlY3VyZVNlY3JldEtleUZvckpXVFRlc3QxMjM0NTY3ODkw";
 
+    @Value("${jwt.secret}")
+    private String secretKey;
     // Token expiration: 24 hours
     private static final long JWT_EXPIRATION = 1000 * 60 * 60 * 24;
 
@@ -122,7 +121,7 @@ public class JwtService {
      */
     private SecretKey getSigningKey() {
 
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
 
         return Keys.hmacShaKeyFor(keyBytes);
     }
