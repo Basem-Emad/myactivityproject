@@ -9,7 +9,10 @@ import com.raya.activitytracking.reporting.dto.response.HoursByTypeResponse;
 import com.raya.activitytracking.reporting.dto.response.MonthlyDetailsResponse;
 import com.raya.activitytracking.reporting.dto.response.MonthlySummaryResponse;
 import com.raya.activitytracking.reporting.service.ReportService;
+import com.raya.activitytracking.usermanagement.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,8 +28,28 @@ public class ReportServiceImpl implements ReportService {
 
     private final ActivityEntryRepository activityEntryRepository;
 
-    // Temporary user ID for pre-authentication phase
-    private static final Long TEMP_USER_ID = 1L;
+    /**
+     * Get the current authenticated user's ID from Spring Security context.
+     * This method extracts the user ID from the JWT token via CustomUserDetails.
+     *
+     * @return the authenticated user's ID
+     * @throws IllegalStateException if no authenticated user is found
+     */
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("No authenticated user found");
+        }
+        
+        Object principal = authentication.getPrincipal();
+        
+        if (principal instanceof CustomUserDetails) {
+            return ((CustomUserDetails) principal).getUserId();
+        }
+        
+        throw new IllegalStateException("Unexpected principal type: " + principal.getClass().getName());
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -34,8 +57,10 @@ public class ReportServiceImpl implements ReportService {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
 
+        Long userId = getCurrentUserId();
+
         List<ActivityEntry> entries = activityEntryRepository
-                .findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(TEMP_USER_ID, start, end);
+                .findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(userId, start, end);
 
         // Calculate total days (distinct dates)
         long totalDays = entries.stream()
@@ -67,7 +92,9 @@ public class ReportServiceImpl implements ReportService {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
 
-        List<Object[]> results = activityEntryRepository.sumDurationByTypeBetween(TEMP_USER_ID, start, end);
+        Long userId = getCurrentUserId();
+
+        List<Object[]> results = activityEntryRepository.sumDurationByTypeBetween(userId, start, end);
 
         return results.stream()
                 .map(row -> HoursByTypeResponse.builder()
@@ -83,7 +110,9 @@ public class ReportServiceImpl implements ReportService {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
 
-        List<Object[]> results = activityEntryRepository.sumDurationBySubjectBetween(TEMP_USER_ID, start, end);
+        Long userId = getCurrentUserId();
+
+        List<Object[]> results = activityEntryRepository.sumDurationBySubjectBetween(userId, start, end);
 
         return results.stream()
                 .map(row -> HoursBySubjectResponse.builder()
@@ -99,8 +128,10 @@ public class ReportServiceImpl implements ReportService {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
 
+        Long userId = getCurrentUserId();
+
         List<ActivityEntry> entries = activityEntryRepository
-                .findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(TEMP_USER_ID, start, end);
+                .findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(userId, start, end);
 
         // Group by date and sum durations
         Map<LocalDate, Long> dailyTotals = entries.stream()
@@ -125,8 +156,10 @@ public class ReportServiceImpl implements ReportService {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
 
+        Long userId = getCurrentUserId();
+
         List<ActivityEntry> entries = activityEntryRepository
-                .findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(TEMP_USER_ID, start, end);
+                .findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(userId, start, end);
 
         List<ActivityDetailResponse> activities = entries.stream()
                 .map(entry -> ActivityDetailResponse.builder()
