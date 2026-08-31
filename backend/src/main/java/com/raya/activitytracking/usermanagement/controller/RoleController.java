@@ -2,6 +2,7 @@ package com.raya.activitytracking.usermanagement.controller;
 
 import com.raya.activitytracking.usermanagement.entity.Role;
 import com.raya.activitytracking.usermanagement.service.RoleService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,23 +21,30 @@ public class RoleController {
     private final RoleService roleService;
 
     @GetMapping()
+    @Operation(summary = "List all roles")
     @PreAuthorize("hasAuthority('Read_Role')")
     public List<Role> getRoles(){
         return roleService.getRoles();
     }
+
     @PostMapping
+    @Operation(summary = "Create a new role")
     @PreAuthorize("hasAuthority('Create_Role')")
     public void addNewRole(@RequestBody Role role){
         roleService.addNewRole(role);
     }
+
     @DeleteMapping(
             path = "{roleId}")
+    @Operation(summary = "Delete a role by ID")
     @PreAuthorize("hasAuthority('Delete_Role')")
     public void deleteRole(
             @PathVariable("roleId")Long Id){
         roleService.deleteRole(Id);
     }
+
     @PutMapping("/updateRole/{id}")
+    @Operation(summary = "Update an existing role")
     @PreAuthorize("hasAuthority('Update_Role')")
     public Role updateRole(
             @PathVariable Long id,
@@ -44,7 +52,9 @@ public class RoleController {
 
         return roleService.updateRole(id, updatedRole);
     }
+
     @PutMapping("/{roleId}/permissions")
+    @Operation(summary = "Assign permissions to a role")
     @PreAuthorize("hasAuthority('Assign_Permissions')")
     public ResponseEntity<Role> assignPermissions(
             @PathVariable Long roleId,

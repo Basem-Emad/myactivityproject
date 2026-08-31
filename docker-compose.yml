@@ -14,10 +14,19 @@ services:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
-  app:
-    build: .
-    environment:
-      JWT_SECRET: ${JWT_SECRET}
+  services:
+    postgres:
+      image: postgres:16
+      container_name: activitytracking-db
+      environment:
+        POSTGRES_DB: activitytracking_db
+        POSTGRES_USER: activitytracking_user
+        POSTGRES_PASSWORD: activitytracking_pass
+      ports:
+        - "5432:5432"
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+      restart: unless-stopped
 
-volumes:
-  pgdata:
+  volumes:
+    pgdata:
