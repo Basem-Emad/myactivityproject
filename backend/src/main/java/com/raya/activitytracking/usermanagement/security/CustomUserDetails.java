@@ -55,4 +55,24 @@ public class CustomUserDetails implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    /**
+     * Get the user ID for the authenticated user.
+     * This is used by other modules (Activity, Reporting) to scope data by user.
+     *
+     * @return the user's ID
+     */
+    public Long getUserId() {
+        return user.getId();
+    }
+
+    /**
+     * Get the full User entity.
+     * Use with caution - prefer getUserId() for data scoping.
+     *
+     * @return the User entity
+     */
+    public User getUser() {
+        return user;
+    }
 }

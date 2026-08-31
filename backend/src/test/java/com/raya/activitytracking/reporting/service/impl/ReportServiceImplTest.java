@@ -10,12 +10,21 @@ import com.raya.activitytracking.reporting.dto.response.HoursBySubjectResponse;
 import com.raya.activitytracking.reporting.dto.response.HoursByTypeResponse;
 import com.raya.activitytracking.reporting.dto.response.MonthlyDetailsResponse;
 import com.raya.activitytracking.reporting.dto.response.MonthlySummaryResponse;
+import com.raya.activitytracking.usermanagement.entity.Role;
+import com.raya.activitytracking.usermanagement.entity.User;
+import com.raya.activitytracking.usermanagement.security.CustomUserDetails;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -27,6 +36,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,7 +49,37 @@ class ReportServiceImplTest {
     @InjectMocks
     private ReportServiceImpl reportService;
 
-    private static final Long TEMP_USER_ID = 1L;
+    private static final Long TEST_USER_ID = 1L;
+
+    @BeforeEach
+    void setUp() {
+        // Mock Spring Security context with authenticated user
+        Role mockRole = new Role();
+        mockRole.setId(1L);
+        mockRole.setName("USER");
+        mockRole.setPermissions(Collections.emptySet()); // Empty permissions for testing
+
+        User mockUser = new User();
+        mockUser.setId(TEST_USER_ID);
+        mockUser.setUserName("testuser");
+        mockUser.setEmail("testuser@example.com");
+        mockUser.setPassword("encodedPassword");
+        mockUser.setRole(mockRole);
+
+        CustomUserDetails userDetails = new CustomUserDetails(mockUser);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Clean up security context after each test
+        SecurityContextHolder.clearContext();
+    }
 
     // ─── MONTHLY SUMMARY TESTS ───────────────────────────────
 
@@ -61,7 +101,7 @@ class ReportServiceImplTest {
         );
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(entries);
+                TEST_USER_ID, start, end)).thenReturn(entries);
 
         MonthlySummaryResponse response = reportService.getMonthlySummary(month);
 
@@ -80,7 +120,7 @@ class ReportServiceImplTest {
         LocalDate end = LocalDate.of(2026, 9, 30);
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(Collections.emptyList());
+                TEST_USER_ID, start, end)).thenReturn(Collections.emptyList());
 
         MonthlySummaryResponse response = reportService.getMonthlySummary(month);
 
@@ -108,7 +148,7 @@ class ReportServiceImplTest {
         );
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(entries);
+                TEST_USER_ID, start, end)).thenReturn(entries);
 
         MonthlySummaryResponse response = reportService.getMonthlySummary(month);
 
@@ -132,7 +172,7 @@ class ReportServiceImplTest {
                 new Object[]{"Training", 180L}
         );
 
-        when(activityEntryRepository.sumDurationByTypeBetween(TEMP_USER_ID, start, end))
+        when(activityEntryRepository.sumDurationByTypeBetween(TEST_USER_ID, start, end))
                 .thenReturn(mockResults);
 
         List<HoursByTypeResponse> response = reportService.getHoursByType(month);
@@ -153,7 +193,7 @@ class ReportServiceImplTest {
         LocalDate start = LocalDate.of(2026, 9, 1);
         LocalDate end = LocalDate.of(2026, 9, 30);
 
-        when(activityEntryRepository.sumDurationByTypeBetween(TEMP_USER_ID, start, end))
+        when(activityEntryRepository.sumDurationByTypeBetween(TEST_USER_ID, start, end))
                 .thenReturn(Collections.emptyList());
 
         List<HoursByTypeResponse> response = reportService.getHoursByType(month);
@@ -176,7 +216,7 @@ class ReportServiceImplTest {
                 new Object[]{"Frontend Development", 600L}
         );
 
-        when(activityEntryRepository.sumDurationBySubjectBetween(TEMP_USER_ID, start, end))
+        when(activityEntryRepository.sumDurationBySubjectBetween(TEST_USER_ID, start, end))
                 .thenReturn(mockResults);
 
         List<HoursBySubjectResponse> response = reportService.getHoursBySubject(month);
@@ -197,7 +237,7 @@ class ReportServiceImplTest {
         LocalDate start = LocalDate.of(2026, 9, 1);
         LocalDate end = LocalDate.of(2026, 9, 30);
 
-        when(activityEntryRepository.sumDurationBySubjectBetween(TEMP_USER_ID, start, end))
+        when(activityEntryRepository.sumDurationBySubjectBetween(TEST_USER_ID, start, end))
                 .thenReturn(Collections.emptyList());
 
         List<HoursBySubjectResponse> response = reportService.getHoursBySubject(month);
@@ -225,7 +265,7 @@ class ReportServiceImplTest {
         );
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(entries);
+                TEST_USER_ID, start, end)).thenReturn(entries);
 
         List<DailyTrendResponse> response = reportService.getDailyTrend(month);
 
@@ -250,7 +290,7 @@ class ReportServiceImplTest {
         LocalDate end = LocalDate.of(2026, 9, 30);
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(Collections.emptyList());
+                TEST_USER_ID, start, end)).thenReturn(Collections.emptyList());
 
         List<DailyTrendResponse> response = reportService.getDailyTrend(month);
 
@@ -275,7 +315,7 @@ class ReportServiceImplTest {
         );
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(entries);
+                TEST_USER_ID, start, end)).thenReturn(entries);
 
         List<DailyTrendResponse> response = reportService.getDailyTrend(month);
 
@@ -299,7 +339,7 @@ class ReportServiceImplTest {
 
         ActivityEntry entry = ActivityEntry.builder()
                 .id(100L)
-                .userId(TEMP_USER_ID)
+                .userId(TEST_USER_ID)
                 .date(LocalDate.of(2026, 8, 15))
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(11, 30))
@@ -310,7 +350,7 @@ class ReportServiceImplTest {
                 .build();
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(Collections.singletonList(entry));
+                TEST_USER_ID, start, end)).thenReturn(Collections.singletonList(entry));
 
         MonthlyDetailsResponse response = reportService.getMonthlyDetails(month);
 
@@ -337,7 +377,7 @@ class ReportServiceImplTest {
         LocalDate end = LocalDate.of(2026, 9, 30);
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(Collections.emptyList());
+                TEST_USER_ID, start, end)).thenReturn(Collections.emptyList());
 
         MonthlyDetailsResponse response = reportService.getMonthlyDetails(month);
 
@@ -364,7 +404,7 @@ class ReportServiceImplTest {
         );
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, start, end)).thenReturn(entries);
+                TEST_USER_ID, start, end)).thenReturn(entries);
 
         MonthlyDetailsResponse response = reportService.getMonthlyDetails(month);
 
@@ -384,13 +424,13 @@ class ReportServiceImplTest {
         LocalDate expectedEnd = LocalDate.of(2026, 2, 28); // Non-leap year
 
         when(activityEntryRepository.findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                eq(TEMP_USER_ID), any(LocalDate.class), any(LocalDate.class)))
+                eq(TEST_USER_ID), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Collections.emptyList());
 
         reportService.getMonthlySummary(month);
 
         verify(activityEntryRepository).findByUserIdAndDateBetweenOrderByDateAscStartTimeAsc(
-                TEMP_USER_ID, expectedStart, expectedEnd);
+                TEST_USER_ID, expectedStart, expectedEnd);
     }
 
     @Test
@@ -401,13 +441,13 @@ class ReportServiceImplTest {
         LocalDate expectedEnd = LocalDate.of(2026, 8, 31);
 
         when(activityEntryRepository.sumDurationByTypeBetween(
-                eq(TEMP_USER_ID), any(LocalDate.class), any(LocalDate.class)))
+                eq(TEST_USER_ID), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Collections.emptyList());
 
         reportService.getHoursByType(month);
 
         verify(activityEntryRepository).sumDurationByTypeBetween(
-                TEMP_USER_ID, expectedStart, expectedEnd);
+                TEST_USER_ID, expectedStart, expectedEnd);
     }
 
     // ─── HELPER METHODS ──────────────────────────────────────
@@ -416,7 +456,7 @@ class ReportServiceImplTest {
                                       ActivityType type, ActivitySubject subject) {
         return ActivityEntry.builder()
                 .id(id)
-                .userId(TEMP_USER_ID)
+                .userId(TEST_USER_ID)
                 .date(date)
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(9, 0).plusMinutes(durationMinutes))
