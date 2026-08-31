@@ -5,29 +5,29 @@ import com.raya.activitytracking.usermanagement.entity.Role;
 import com.raya.activitytracking.usermanagement.repository.PermissionRepository;
 import com.raya.activitytracking.usermanagement.repository.RoleRepository;
 import com.raya.activitytracking.usermanagement.repository.UserRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-
+@AllArgsConstructor
 @Service
 public class RoleService {
+
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PermissionRepository permissionRepository;
-    public RoleService(RoleRepository roleRepository, UserRepository userRepository, PermissionRepository permissionRepository) {
-        this.roleRepository = roleRepository;
-        this.userRepository = userRepository;
-        this.permissionRepository = permissionRepository;
-    }
+
     public List<Role> getRoles(){
         return roleRepository.findAll();
     }
-    public Role getRoleById(Integer id) {
+
+    public Role getRoleById(Long id) {
         return roleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
     }
+
     public void addNewRole(Role role) {
         Optional<Role> roleByName= roleRepository.findByName(role.getName());
         if(roleByName.isPresent())
@@ -36,10 +36,10 @@ public class RoleService {
         roleRepository.save(role);
 
     }
-    public void deleteRole(Integer id) {
+    public void deleteRole(Long id) {
         boolean exists=roleRepository.existsById(id);
         if(!exists){
-            throw new IllegalStateException("Role with id"+id+"does not exist");
+            throw new IllegalStateException("Role with id " + id + " does not exist");
         }
         if (userRepository.existsByRoleId(id)) {
             throw new RuntimeException(
@@ -48,7 +48,8 @@ public class RoleService {
         }
         roleRepository.deleteById(id);
     }
-    public Role updateRole(Integer id, Role updatedRole) {
+
+    public Role updateRole(Long id, Role updatedRole) {
 
         Role existingRole = roleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
@@ -58,8 +59,8 @@ public class RoleService {
 
 }
     public Role assignPermissions(
-            Integer roleId,
-            List<Integer> permissionIds) {
+            Long roleId,
+            List<Long> permissionIds) {
 
         // Find the role
         Role role = roleRepository.findById(roleId)

@@ -1,6 +1,7 @@
 package com.raya.activitytracking.usermanagement.controller;
 
 import com.raya.activitytracking.usermanagement.dto.LoginRequest;
+import com.raya.activitytracking.usermanagement.dto.request.UserRequest;
 import com.raya.activitytracking.usermanagement.entity.User;
 import com.raya.activitytracking.usermanagement.security.JwtService;
 import com.raya.activitytracking.usermanagement.service.UserService;
@@ -54,6 +55,11 @@ public class AuthController {
         return ResponseEntity.ok(
                 userService.getUserByUserName(username)
         );
+    }
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@RequestBody UserRequest request) {
+        userService.addNewUser(request);
+        return ResponseEntity.ok("User registered successfully");
     }
 
 }

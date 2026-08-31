@@ -1,22 +1,37 @@
+export interface MonthlySummary {
+    month: string;
+    totalDays: number;
+    totalDurationMinutes: number;
+    averageDurationMinutes: number;
+}
+
 export interface HoursByType {
     activityType: string;
-    hoursMinutes: string;
+    totalDurationMinutes: number;
 }
 
 export interface HoursBySubject {
     activitySubject: string;
-    hoursMinutes: string;
+    totalDurationMinutes: number;
 }
 
-export interface DailyTrendPoint {
-    day: number;
-    hours: number;
+export interface DailyTrend {
+    date: string;
+    totalDurationMinutes: number;
 }
 
-export interface MonthlySummary {
-    totalDays: number;
-    totalHoursMinutes: string;
-    byActivityType: HoursByType[];
-    byActivitySubject: HoursBySubject[];
-    dailyTrend: DailyTrendPoint[];
+export interface ActivityDetail {
+    id: number;
+    date: string;
+    startTime: string;
+    endTime: string;
+    activityType: string;
+    activitySubject: string;
+    taskDescription: string;
+    durationMinutes: number;
+}
+
+export interface MonthlyDetails {
+    month: string;
+    activities: ActivityDetail[];
 }

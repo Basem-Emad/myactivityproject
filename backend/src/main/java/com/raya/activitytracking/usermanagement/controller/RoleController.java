@@ -33,13 +33,13 @@ public class RoleController {
             path = "{roleId}")
     @PreAuthorize("hasAuthority('Delete_Role')")
     public void deleteRole(
-            @PathVariable("roleId")Integer Id){
+            @PathVariable("roleId")Long Id){
         roleService.deleteRole(Id);
     }
     @PutMapping("/updateRole/{id}")
     @PreAuthorize("hasAuthority('Update_Role')")
     public Role updateRole(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @RequestBody Role updatedRole) {
 
         return roleService.updateRole(id, updatedRole);
@@ -47,8 +47,8 @@ public class RoleController {
     @PutMapping("/{roleId}/permissions")
     @PreAuthorize("hasAuthority('Assign_Permissions')")
     public ResponseEntity<Role> assignPermissions(
-            @PathVariable Integer roleId,
-            @RequestBody List<Integer> permissionIds) {
+            @PathVariable Long roleId,
+            @RequestBody List<Long> permissionIds) {
 
         return ResponseEntity.ok(
                 roleService.assignPermissions(

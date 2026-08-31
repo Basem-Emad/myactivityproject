@@ -1,60 +1,61 @@
 package com.raya.activitytracking.usermanagement.service;
 
+import com.raya.activitytracking.usermanagement.dto.request.UserRequest;
 import com.raya.activitytracking.usermanagement.entity.Role;
 import com.raya.activitytracking.usermanagement.entity.User;
 import com.raya.activitytracking.usermanagement.repository.RoleRepository;
 import com.raya.activitytracking.usermanagement.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+@AllArgsConstructor
 @Service
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
-   /* public List<User_> getUsers(){
+
+   public List<User> getUsers(){
         return userRepository.findAll();
-    }*/
-    public User getUserById(Integer id) {
+    }
+    public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public void addNewUser(User user) {
-        Optional<User>userByuserName= userRepository.findByUserName(user.getUserName());
+    public void addNewUser(UserRequest request) {
+        Optional<User>userByuserName= userRepository.findByUserName(request.getUserName());
         if(userByuserName.isPresent())
             throw new IllegalStateException("UserName is taken");
 
-        Integer roleId=user.getRole().getId();
-        Role role = roleRepository.findById(roleId)
+        Role role = roleRepository.findById(request.getRoleId())
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        user.setRole(role);
 
-        user.setPassword(
-                passwordEncoder.encode(user.getPassword()));
+        User user = new User();
+        user.setUserName(request.getUserName());
+        user.setEmail(request.getEmail());
+        user.setDateOfBirth(request.getDateOfBirth());
+        user.setGender(request.getGender());
+        user.setRole(role);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
 
     }
 
-    public void deleteUser(Integer id) {
+    public void deleteUser(Long id) {
         boolean exists=userRepository.existsById(id);
         if(!exists){
-            throw new IllegalStateException("User with id"+id+"does not exist");
+            throw new IllegalStateException("User with id " + id + " does not exist");
         }
         userRepository.deleteById(id);
     }
@@ -62,13 +63,13 @@ public class UserService {
     public User getUserByUserName(String userName) {
 
         return userRepository.findByUserName(userName)
-                .orElse(null);
+                .orElseThrow(() -> new RuntimeException("User not found with username: " + userName));
     }
-    public User updateUser(Integer id, User updatedUser) {
+    public User updateUser(Long id, UserRequest updatedUser) {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        Integer roleId=updatedUser.getRole().getId();
+        Long roleId=updatedUser.getRoleId();
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
@@ -96,16 +97,5 @@ public class UserService {
 
         return userRepository.findAll(pageable);
     }
-//    public User_ assignRole(Integer userId, Integer roleId) {
-//
-//        User_ user = userRepository.findById(userId)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//
-//        Role_ role = roleRepository.findById(roleId)
-//                .orElseThrow(() -> new RuntimeException("Role not found"));
-//
-//        user.setRole(role);
-//
-//        return userRepository.save(user);
-//    }
+
 }

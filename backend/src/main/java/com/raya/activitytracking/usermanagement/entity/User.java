@@ -19,16 +19,8 @@ public class User {
 
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @SequenceGenerator(
-//            name = "user_Seq",
-//            sequenceName = "user_Seq",
-//            allocationSize = 1
-//    )
-//    @GeneratedValue(
-//            strategy = GenerationType.SEQUENCE,
-//            generator = "user_Seq"
-//    )
-    private Integer id;
+
+   private Long id;
 
     private String userName;
     @Column(nullable = false)
