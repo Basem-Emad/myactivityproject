@@ -31,7 +31,7 @@ public interface ActivityEntryRepository extends JpaRepository<ActivityEntry, Lo
     // existing.endTime > proposedStartTime
     @Query("""
                 SELECT e FROM ActivityEntry e
-                WHERE e.userId = :userId
+                WHERE e.user.id = :userId
                   AND e.date = :date
                   AND e.startTime < :endTime
                   AND e.endTime > :startTime
@@ -43,14 +43,13 @@ public interface ActivityEntryRepository extends JpaRepository<ActivityEntry, Lo
             @Param("startTime") LocalTime startTime,
             @Param("endTime") LocalTime endTime,
             @Param("excludeId") Long excludeId);
-
     // Reporting aggregation queries
 
     // Sum duration grouped by Activity Type for a date range
     @Query("""
                 SELECT e.activityType.name, SUM(e.durationMinutes)
                 FROM ActivityEntry e
-                WHERE e.userId = :userId AND e.date BETWEEN :start AND :end
+                WHERE e.user.id = :userId AND e.date BETWEEN :start AND :end
                 GROUP BY e.activityType.name
                 ORDER BY e.activityType.name
             """)
@@ -63,7 +62,7 @@ public interface ActivityEntryRepository extends JpaRepository<ActivityEntry, Lo
     @Query("""
                 SELECT e.activitySubject.name, SUM(e.durationMinutes)
                 FROM ActivityEntry e
-                WHERE e.userId = :userId AND e.date BETWEEN :start AND :end
+                WHERE e.user.id = :userId AND e.date BETWEEN :start AND :end
                 GROUP BY e.activitySubject.name
                 ORDER BY e.activitySubject.name
             """)

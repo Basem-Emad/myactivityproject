@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import {
   getMonthlySummary,
   getHoursByType,
@@ -36,35 +36,49 @@ function MonthlyReportPage() {
   const [hoursByType, setHoursByType] = useState<HoursByType[]>([]);
   const [hoursBySubject, setHoursBySubject] = useState<HoursBySubject[]>([]);
   const [activities, setActivities] = useState<ActivityDetail[]>([]);
-
-  async function loadReport() {
-    setState("loading");
-    try {
-      const [summaryData, typeData, subjectData, detailsData] = await Promise.all([
-        getMonthlySummary(selectedMonth),
-        getHoursByType(selectedMonth),
-        getHoursBySubject(selectedMonth),
-        getMonthlyDetails(selectedMonth),
-      ]);
-
-      setSummary(summaryData);
-      setHoursByType(typeData);
-      setHoursBySubject(subjectData);
-      setActivities(detailsData.activities);
-
-      setState(summaryData.totalDays === 0 ? "empty" : "loaded");
-    } catch {
-      setState("error");
-    }
-  }
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    loadReport();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonth]);
+    let ignore = false;
+
+    async function fetchReport() {
+      try {
+        const [summaryData, typeData, subjectData, detailsData] = await Promise.all([
+          getMonthlySummary(selectedMonth),
+          getHoursByType(selectedMonth),
+          getHoursBySubject(selectedMonth),
+          getMonthlyDetails(selectedMonth),
+        ]);
+
+        if (!ignore) {
+          setSummary(summaryData);
+          setHoursByType(typeData);
+          setHoursBySubject(subjectData);
+          setActivities(detailsData.activities);
+          setState(summaryData.totalDays === 0 ? "empty" : "loaded");
+        }
+      } catch {
+        if (!ignore) {
+          setState("error");
+        }
+      }
+    }
+
+    fetchReport();
+
+    return () => {
+      ignore = true;
+    };
+  }, [selectedMonth, retryCount]);
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedMonth(e.target.value);
+    setState("loading");
+  };
+
+  const handleRetry = () => {
+    setState("loading");
+    setRetryCount((c) => c + 1);
   };
 
   const handleExportExcel = () => {
@@ -121,7 +135,7 @@ function MonthlyReportPage() {
         {state === "loading" && <LoadingState />}
 
         {/* Error State */}
-        {state === "error" && <ErrorState onRetry={loadReport} />}
+        {state === "error" && <ErrorState onRetry={handleRetry} />}
 
         {/* Empty State */}
         {state === "empty" && <EmptyState month={selectedMonth} />}

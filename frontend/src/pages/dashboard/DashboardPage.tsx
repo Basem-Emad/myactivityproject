@@ -230,9 +230,9 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function loadDashboard() {
-    setLoading(true);
-    setError(null);
     try {
+      setLoading(true);
+      setError(null);
       const [summaryData, typeData, subjectData, trendData] = await Promise.all([
         getMonthlySummary(month),
         getHoursByType(month),
@@ -251,8 +251,37 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    loadDashboard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let ignore = false;
+    async function fetchDashboard() {
+      try {
+        setLoading(true);
+        setError(null);
+        const [summaryData, typeData, subjectData, trendData] = await Promise.all([
+          getMonthlySummary(month),
+          getHoursByType(month),
+          getHoursBySubject(month),
+          getDailyTrend(month),
+        ]);
+        if (!ignore) {
+          setSummary(summaryData);
+          setHoursByType(typeData);
+          setHoursBySubject(subjectData);
+          setDailyTrend(trendData);
+        }
+      } catch {
+        if (!ignore) {
+          setError("Couldn't load the dashboard data. Please try again.");
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+    fetchDashboard();
+    return () => {
+      ignore = true;
+    };
   }, [month]);
 
   if (loading) {

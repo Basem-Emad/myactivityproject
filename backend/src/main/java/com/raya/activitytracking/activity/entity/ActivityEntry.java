@@ -2,6 +2,7 @@ package com.raya.activitytracking.activity.entity;
 
 import com.raya.activitytracking.masterdata.entity.ActivityType;
 import com.raya.activitytracking.masterdata.entity.ActivitySubject;
+import com.raya.activitytracking.usermanagement.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
@@ -23,10 +24,10 @@ public class ActivityEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Temporary: plain Long until User entity exists
-    @NotNull(message = "User ID is required")
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @NotNull(message = "User is required")
+    private User user;
 
     @NotNull(message = "Date is required")
     @Column(nullable = false)

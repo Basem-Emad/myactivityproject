@@ -9,6 +9,8 @@ import com.raya.activitytracking.masterdata.entity.ActivityType;
 import com.raya.activitytracking.masterdata.entity.ActivitySubject;
 import com.raya.activitytracking.masterdata.repository.ActivityTypeRepository;
 import com.raya.activitytracking.masterdata.repository.ActivitySubjectRepository;
+import com.raya.activitytracking.usermanagement.entity.User;
+import com.raya.activitytracking.usermanagement.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
     private final ActivityEntryRepository activityEntryRepository;
     private final ActivityTypeRepository activityTypeRepository;
     private final ActivitySubjectRepository activitySubjectRepository;
+    private final UserRepository userRepository;
 
     @Override
     public ActivityEntryResponse create(Long userId, ActivityEntryRequest request) {
@@ -38,6 +41,9 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
                 request.getStartTime(), request.getEndTime(), null);
 
         // 3. Look up related entities
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "User not found with id: " + userId));
         ActivityType type = findActivityType(request.getActivityTypeId());
         ActivitySubject subject = findActivitySubject(request.getActivitySubjectId());
         validateActiveStatusForCreate(type, subject);
@@ -48,7 +54,7 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
 
         // 5. Build and save
         ActivityEntry entry = ActivityEntry.builder()
-                .userId(userId)
+                .user(user)
                 .date(request.getDate())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
@@ -99,7 +105,7 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
         ActivityEntry entry = findEntityById(id);
 
         // Security: ensure the entry belongs to the requesting user
-        if (!entry.getUserId().equals(userId)) {
+        if (!entry.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException(
                     "You can only edit your own activity entries");
         }
@@ -129,7 +135,7 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
     @Override
     public void delete(Long id, Long userId) {
         ActivityEntry entry = findEntityById(id);
-        if (!entry.getUserId().equals(userId)) {
+        if (!entry.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException(
                     "You can only delete your own activity entries");
         }
@@ -236,7 +242,7 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
 
         return ActivityEntryResponse.builder()
                 .id(entry.getId())
-                .userId(entry.getUserId())
+                .userId(entry.getUser().getId())
                 .date(entry.getDate())
                 .startTime(entry.getStartTime())
                 .endTime(entry.getEndTime())

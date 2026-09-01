@@ -3,6 +3,9 @@ package com.raya.activitytracking.activity.service.impl;
 import com.raya.activitytracking.activity.repository.ActivityEntryRepository;
 import com.raya.activitytracking.masterdata.repository.ActivityTypeRepository;
 import com.raya.activitytracking.masterdata.repository.ActivitySubjectRepository;
+import com.raya.activitytracking.usermanagement.entity.User;
+import com.raya.activitytracking.usermanagement.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,9 +37,19 @@ class ActivityEntryServiceImplTest {
     @Mock private ActivityEntryRepository activityEntryRepository;
     @Mock private ActivityTypeRepository activityTypeRepository;
     @Mock private ActivitySubjectRepository activitySubjectRepository;
+    @Mock private UserRepository userRepository;
 
     @InjectMocks
     private ActivityEntryServiceImpl service;
+
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        testUser = new User();
+        testUser.setId(1L);
+        testUser.setUserName("testuser");
+    }
 
     // ─── GET BY ID ───────────────────────────────────────────
 
@@ -47,7 +61,7 @@ class ActivityEntryServiceImplTest {
 
         ActivityEntry entry = ActivityEntry.builder()
                 .id(10L)
-                .userId(1L)
+                .user(testUser)
                 .date(LocalDate.of(2026, 8, 20))
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(10, 30))
@@ -140,6 +154,7 @@ class ActivityEntryServiceImplTest {
 
         when(activityEntryRepository.findOverlapping(1L, request.getDate(), request.getStartTime(), request.getEndTime(), null))
                 .thenReturn(java.util.Collections.emptyList());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(activityTypeRepository.findById(1L)).thenReturn(Optional.of(activeType));
         when(activitySubjectRepository.findById(2L)).thenReturn(Optional.of(activeSubject));
         when(activityEntryRepository.save(org.mockito.ArgumentMatchers.any(ActivityEntry.class)))
@@ -153,8 +168,30 @@ class ActivityEntryServiceImplTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(100L);
+        assertThat(response.getUserId()).isEqualTo(1L);
         assertThat(response.getActivityTypeName()).isEqualTo("Development");
         assertThat(response.getActivitySubjectName()).isEqualTo("Project Raya");
+    }
+
+    @Test
+    @DisplayName("create: should throw EntityNotFoundException when user is not found")
+    void create_shouldThrowException_whenUserNotFound() {
+        ActivityEntryRequest request = new ActivityEntryRequest(
+                LocalDate.of(2026, 8, 20),
+                LocalTime.of(9, 0),
+                LocalTime.of(11, 0),
+                1L,
+                2L,
+                "Valid task"
+        );
+
+        when(activityEntryRepository.findOverlapping(999L, request.getDate(), request.getStartTime(), request.getEndTime(), null))
+                .thenReturn(java.util.Collections.emptyList());
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.create(999L, request))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("User not found with id: 999");
     }
 
     @Test
@@ -174,6 +211,7 @@ class ActivityEntryServiceImplTest {
 
         when(activityEntryRepository.findOverlapping(1L, request.getDate(), request.getStartTime(), request.getEndTime(), null))
                 .thenReturn(java.util.Collections.emptyList());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(activityTypeRepository.findById(1L)).thenReturn(Optional.of(inactiveType));
         when(activitySubjectRepository.findById(2L)).thenReturn(Optional.of(activeSubject));
 
@@ -199,6 +237,7 @@ class ActivityEntryServiceImplTest {
 
         when(activityEntryRepository.findOverlapping(1L, request.getDate(), request.getStartTime(), request.getEndTime(), null))
                 .thenReturn(java.util.Collections.emptyList());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(activityTypeRepository.findById(1L)).thenReturn(Optional.of(activeType));
         when(activitySubjectRepository.findById(2L)).thenReturn(Optional.of(inactiveSubject));
 
@@ -217,7 +256,7 @@ class ActivityEntryServiceImplTest {
 
         ActivityEntry existingEntry = ActivityEntry.builder()
                 .id(10L)
-                .userId(1L)
+                .user(testUser)
                 .date(LocalDate.of(2026, 8, 20))
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(10, 0))
@@ -259,7 +298,7 @@ class ActivityEntryServiceImplTest {
 
         ActivityEntry existingEntry = ActivityEntry.builder()
                 .id(10L)
-                .userId(1L)
+                .user(testUser)
                 .activityType(existingType)
                 .activitySubject(existingSubject)
                 .build();
@@ -294,7 +333,7 @@ class ActivityEntryServiceImplTest {
 
         ActivityEntry existingEntry = ActivityEntry.builder()
                 .id(10L)
-                .userId(1L)
+                .user(testUser)
                 .activityType(existingType)
                 .activitySubject(existingSubject)
                 .build();
@@ -319,5 +358,69 @@ class ActivityEntryServiceImplTest {
         assertThatThrownBy(() -> service.update(10L, 1L, updateRequest))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Cannot change to inactive Activity Subject: Inactive Subject");
+    }
+
+    @Test
+    @DisplayName("update: should throw IllegalArgumentException when trying to update another user's entry")
+    void update_shouldThrowException_whenEntryBelongsToDifferentUser() {
+        User otherUser = new User();
+        otherUser.setId(2L);
+        otherUser.setUserName("otheruser");
+
+        ActivityEntry existingEntry = ActivityEntry.builder()
+                .id(10L)
+                .user(otherUser)
+                .build();
+
+        ActivityEntryRequest updateRequest = new ActivityEntryRequest(
+                LocalDate.of(2026, 8, 20),
+                LocalTime.of(9, 0),
+                LocalTime.of(10, 0),
+                1L,
+                2L,
+                "Update attempt"
+        );
+
+        when(activityEntryRepository.findById(10L)).thenReturn(Optional.of(existingEntry));
+
+        assertThatThrownBy(() -> service.update(10L, 1L, updateRequest))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("You can only edit your own activity entries");
+    }
+
+    // ─── DELETE VALIDATIONS ──────────────────────────────────
+
+    @Test
+    @DisplayName("delete: should delete entry when it belongs to the requesting user")
+    void delete_shouldSucceed_whenEntryBelongsToUser() {
+        ActivityEntry existingEntry = ActivityEntry.builder()
+                .id(10L)
+                .user(testUser)
+                .build();
+
+        when(activityEntryRepository.findById(10L)).thenReturn(Optional.of(existingEntry));
+
+        service.delete(10L, 1L);
+
+        verify(activityEntryRepository).delete(existingEntry);
+    }
+
+    @Test
+    @DisplayName("delete: should throw IllegalArgumentException when trying to delete another user's entry")
+    void delete_shouldThrowException_whenEntryBelongsToDifferentUser() {
+        User otherUser = new User();
+        otherUser.setId(2L);
+        otherUser.setUserName("otheruser");
+
+        ActivityEntry existingEntry = ActivityEntry.builder()
+                .id(10L)
+                .user(otherUser)
+                .build();
+
+        when(activityEntryRepository.findById(10L)).thenReturn(Optional.of(existingEntry));
+
+        assertThatThrownBy(() -> service.delete(10L, 1L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("You can only delete your own activity entries");
     }
 }

@@ -31,7 +31,7 @@ SELECT
     '2000-01-01',
     'admin@example.com',
     0,
-    '$2a$10$xn.uJHoBuWA71ZYydpR2V.1IU1oi0Kk944s4aFMl2qOaOH7ojUSwu',
+    '$2a$10$7lBDW/qPHSr4vvFvd.aiy.gV0OI2H6HyBPAKmfX1bIKNog8TycTMC',
     'admin',
     r.id
 FROM roles r

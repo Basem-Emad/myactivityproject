@@ -74,7 +74,7 @@ export function getApiErrorMessage(
    * Server-side failures intentionally use a generic message so internal
    * implementation details are never exposed in the UI.
    */
-  if (status === 400 || status === 409 || status === 422) {
+  if (status === 400 || status === 401 || status === 409 || status === 422) {
     const validationMessage = getValidationMessage(data);
 
     if (validationMessage) {

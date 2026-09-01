@@ -47,6 +47,36 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalState(
+            IllegalStateException ex, HttpServletRequest request) {
+
+        ApiErrorResponse error = ApiErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {
+
+        ApiErrorResponse error = ApiErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error(HttpStatus.FORBIDDEN.getReasonPhrase())
+                .message("You do not have permission to perform this operation")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -106,6 +136,25 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler({
+            org.springframework.security.authentication.BadCredentialsException.class,
+            org.springframework.security.core.userdetails.UsernameNotFoundException.class,
+            org.springframework.security.core.AuthenticationException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleAuthentication(
+            Exception ex, HttpServletRequest request) {
+
+        ApiErrorResponse error = ApiErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
+                .message("Invalid username or password")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     @ExceptionHandler(Exception.class)

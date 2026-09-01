@@ -50,6 +50,7 @@ class ReportServiceImplTest {
     private ReportServiceImpl reportService;
 
     private static final Long TEST_USER_ID = 1L;
+    private User mockUser;
 
     @BeforeEach
     void setUp() {
@@ -59,7 +60,7 @@ class ReportServiceImplTest {
         mockRole.setName("USER");
         mockRole.setPermissions(Collections.emptySet()); // Empty permissions for testing
 
-        User mockUser = new User();
+        mockUser = new User();
         mockUser.setId(TEST_USER_ID);
         mockUser.setUserName("testuser");
         mockUser.setEmail("testuser@example.com");
@@ -339,7 +340,7 @@ class ReportServiceImplTest {
 
         ActivityEntry entry = ActivityEntry.builder()
                 .id(100L)
-                .userId(TEST_USER_ID)
+                .user(mockUser)
                 .date(LocalDate.of(2026, 8, 15))
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(11, 30))
@@ -456,7 +457,7 @@ class ReportServiceImplTest {
                                       ActivityType type, ActivitySubject subject) {
         return ActivityEntry.builder()
                 .id(id)
-                .userId(TEST_USER_ID)
+                .user(mockUser)
                 .date(date)
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(9, 0).plusMinutes(durationMinutes))
