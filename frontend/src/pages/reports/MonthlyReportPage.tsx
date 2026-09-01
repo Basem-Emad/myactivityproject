@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import {
   getMonthlySummary,
   getHoursByType,
@@ -30,6 +30,10 @@ function trimSeconds(time: string): string {
 
 function MonthlyReportPage() {
   const [selectedMonth, setSelectedMonth] = useState("2026-08");
+  // inputMonth drives the <input> display value independently from selectedMonth.
+  // This prevents the controlled input from snapping back during intermediate
+  // keystrokes (e.g. empty string while the user clears the field to retype).
+  const [inputMonth, setInputMonth] = useState("2026-08");
   const [state, setState] = useState<PageState>("loading");
 
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
@@ -72,8 +76,16 @@ function MonthlyReportPage() {
   }, [selectedMonth, retryCount]);
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedMonth(e.target.value);
-    setState("loading");
+    const value = e.target.value;
+    // Always update the display value so the input is never frozen mid-edit.
+    setInputMonth(value);
+    // Only commit to selectedMonth (and trigger a data load) once the value is
+    // a complete, valid YYYY-MM string. Partial values (e.g. "") are silently
+    // ignored until the user finishes typing.
+    if (/^\d{4}-\d{2}$/.test(value)) {
+      setSelectedMonth(value);
+      setState("loading");
+    }
   };
 
   const handleRetry = () => {
@@ -104,9 +116,9 @@ function MonthlyReportPage() {
             <input
                 type="month"
                 id="report-month"
-                value={selectedMonth}
+                value={inputMonth}
                 onChange={handleMonthChange}
-                disabled={state === "loading" || state === "error"}
+                disabled={state === "loading"}
                 className="month-input"
             />
             <button
