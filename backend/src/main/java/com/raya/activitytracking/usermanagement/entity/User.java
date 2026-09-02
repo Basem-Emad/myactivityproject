@@ -1,7 +1,7 @@
 package com.raya.activitytracking.usermanagement.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.raya.activitytracking.usermanagement.utilis.Gender;
+import com.raya.activitytracking.usermanagement.util.Gender;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
@@ -17,39 +18,28 @@ import java.time.LocalDate;
 @Table(name = "users")
 public class User {
 
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-   private Long id;
-
+    @Column(nullable = false, unique = true, length = 50)
     private String userName;
+
     @Column(nullable = false)
     @JsonIgnore
     private String password;
+
+    @Column(length = 100)
     private String email;
+
     private LocalDate dateOfBirth;
+
     private Gender gender;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
-
-
-
-
-
-   /* public User(String userName,
-                String password,
-                String email,
-                LocalDate dateOfBirth,
-                Gender gender) {
-        this.userName = userName;
-        this.password = password;
-        this.email = email;
-        this.dateOfBirth = dateOfBirth;
-        this.gender = gender;
-    }*/
-
-
-
-
 }

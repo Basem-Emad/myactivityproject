@@ -72,10 +72,10 @@ public class ActivitySubjectServiceImpl implements ActivitySubjectService {
     }
 
     @Override
-    public void deactivate(Long id) {
+    public ActivitySubjectResponse setActiveStatus(Long id, boolean active) {
         ActivitySubject entity = findEntityById(id);
-        entity.setActive(false);
-        activitySubjectRepository.save(entity);
+        entity.setActive(active);
+        return toResponse(activitySubjectRepository.save(entity));
     }
 
     private ActivitySubject findEntityById(Long id) {

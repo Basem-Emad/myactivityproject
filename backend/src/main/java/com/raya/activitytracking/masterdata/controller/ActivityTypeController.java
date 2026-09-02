@@ -43,9 +43,10 @@ public class ActivityTypeController {
         return ResponseEntity.ok(activityTypeService.update(id, request));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        activityTypeService.deactivate(id);
-        return ResponseEntity.noContent().build();
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ActivityTypeResponse> setActiveStatus(
+            @PathVariable Long id,
+            @RequestParam boolean active) {
+        return ResponseEntity.ok(activityTypeService.setActiveStatus(id, active));
     }
 }

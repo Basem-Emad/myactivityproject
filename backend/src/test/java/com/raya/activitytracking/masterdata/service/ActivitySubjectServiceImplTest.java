@@ -130,21 +130,33 @@ class ActivitySubjectServiceImplTest {
     }
 
     @Test
-    void deactivate_shouldSetActiveFalse_whenEntityExists() {
+    void setActiveStatus_shouldDeactivateEntity_whenEntityExists() {
         when(activitySubjectRepository.findById(1L)).thenReturn(Optional.of(existingEntity));
         when(activitySubjectRepository.save(any(ActivitySubject.class))).thenReturn(existingEntity);
 
-        activitySubjectService.deactivate(1L);
+        activitySubjectService.setActiveStatus(1L, false);
 
         assertThat(existingEntity.getActive()).isFalse();
         verify(activitySubjectRepository, times(1)).save(existingEntity);
     }
 
     @Test
-    void deactivate_shouldThrowException_whenEntityDoesNotExist() {
+    void setActiveStatus_shouldReactivateEntity_whenEntityExists() {
+        existingEntity.setActive(false);
+        when(activitySubjectRepository.findById(1L)).thenReturn(Optional.of(existingEntity));
+        when(activitySubjectRepository.save(any(ActivitySubject.class))).thenReturn(existingEntity);
+
+        activitySubjectService.setActiveStatus(1L, true);
+
+        assertThat(existingEntity.getActive()).isTrue();
+        verify(activitySubjectRepository, times(1)).save(existingEntity);
+    }
+
+    @Test
+    void setActiveStatus_shouldThrowException_whenEntityDoesNotExist() {
         when(activitySubjectRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> activitySubjectService.deactivate(99L))
+        assertThatThrownBy(() -> activitySubjectService.setActiveStatus(99L, false))
                 .isInstanceOf(EntityNotFoundException.class);
 
         verify(activitySubjectRepository, never()).save(any(ActivitySubject.class));

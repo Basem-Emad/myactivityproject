@@ -52,40 +52,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             username = jwtService.extractUsername(jwt);
+            if (username != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                try {
+
+                    UserDetails userDetails =
+                            userDetailsService.loadUserByUsername(username);
+
+                    if (jwtService.isTokenValid(jwt, userDetails)
+                            && userDetails.isEnabled()) {
+
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+
+                        authentication.setDetails(
+                                new WebAuthenticationDetailsSource()
+                                        .buildDetails(request)
+                        );
+
+                        SecurityContextHolder
+                                .getContext()
+                                .setAuthentication(authentication);
+                    }
+
+                } catch (Exception e) {
+                    // Invalid token or user not found.
+                    // Continue as unauthenticated.
+                }
+            }
         } catch (Exception e) {
             filterChain.doFilter(request, response);
             return;
         }
 
         // Check if user is already authenticated
-        if (username != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            // Load user from database
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(username);
-
-            // Validate JWT
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request)
-                );
-
-                // Tell Spring Security that this user is authenticated
-                SecurityContextHolder
-                        .getContext()
-                        .setAuthentication(authentication);
-            }
-        }
 
         // Continue filter chain
         filterChain.doFilter(request, response);

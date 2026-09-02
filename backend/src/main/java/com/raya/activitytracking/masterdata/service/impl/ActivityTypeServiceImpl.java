@@ -70,10 +70,10 @@ public class ActivityTypeServiceImpl implements ActivityTypeService {
     }
 
     @Override
-    public void deactivate(Long id) {
+    public ActivityTypeResponse setActiveStatus(Long id, boolean active) {
         ActivityType entity = findEntityById(id);
-        entity.setActive(false);
-        activityTypeRepository.save(entity);
+        entity.setActive(active);
+        return toResponse(activityTypeRepository.save(entity));
     }
 
     private ActivityType findEntityById(Long id) {

@@ -1,69 +1,42 @@
 package com.raya.activitytracking.usermanagement.controller;
 
-import com.raya.activitytracking.usermanagement.dto.LoginRequest;
-import com.raya.activitytracking.usermanagement.dto.request.UserRequest;
-import com.raya.activitytracking.usermanagement.entity.User;
-import com.raya.activitytracking.usermanagement.security.JwtService;
-import com.raya.activitytracking.usermanagement.service.UserService;
+import com.raya.activitytracking.usermanagement.dto.request.LoginRequest;
+import com.raya.activitytracking.usermanagement.dto.request.RegisterRequest;
+import com.raya.activitytracking.usermanagement.dto.response.UserResponse;
+import com.raya.activitytracking.usermanagement.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
-import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
-@AllArgsConstructor
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/auth")
-@Tag(
-        name = "Authentication",
-        description = "Authentication and current-user operations"
-)
+@Tag(name = "Authentication", description = "Authentication and current-user operations")
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
-    private final UserService userService;
+    private final AuthService authService;
 
     @PostMapping("/login")
     @Operation(summary = "Authenticate and receive a JWT")
-    public ResponseEntity<String> login(
-            @RequestBody LoginRequest loginRequest
-            ) {
-
-        Authentication authentication =
-                authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                loginRequest.getUsername(),
-                                loginRequest.getPassword()
-                        )
-                );
-        UserDetails userDetails =
-                (UserDetails) authentication.getPrincipal();
-
-        String token =
-                jwtService.generateToken(userDetails);
-
-        return ResponseEntity.ok(token);
-
+    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest loginRequest) {
+        return ResponseEntity.ok(authService.login(loginRequest));
     }
+
     @GetMapping("/me")
     @Operation(summary = "Get the currently authenticated user")
-    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
-
-        String username = authentication.getName();
-
-        return ResponseEntity.ok(
-                userService.getUserByUserName(username)
-        );
+    public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
+        return ResponseEntity.ok(authService.getCurrentUser(authentication.getName()));
     }
+
     @PostMapping("/register")
-    @Operation(summary = "Register a new user")
-    public ResponseEntity<String> register(@RequestBody UserRequest request) {
-        userService.addNewUser(request);
-        return ResponseEntity.ok("User registered successfully");
+    @Operation(summary = "Publicly register a new user account (assigned the default Employee role)")
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+        UserResponse created = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
-
 }

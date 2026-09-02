@@ -15,5 +15,5 @@ public interface ActivitySubjectService {
 
     ActivitySubjectResponse update(Long id, ActivitySubjectRequest request);
 
-    void deactivate(Long id);
+    ActivitySubjectResponse setActiveStatus(Long id, boolean active);
 }

@@ -15,5 +15,5 @@ public interface ActivityTypeService {
 
     ActivityTypeResponse update(Long id, ActivityTypeRequest request);
 
-    void deactivate(Long id);
+    ActivityTypeResponse setActiveStatus(Long id, boolean active);
 }
