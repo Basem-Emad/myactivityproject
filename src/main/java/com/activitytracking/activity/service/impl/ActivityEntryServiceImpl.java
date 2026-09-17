@@ -1,5 +1,6 @@
 package com.activitytracking.activity.service.impl;
 
+import com.activitytracking.activity.dto.request.ActivityEntryFilter;
 import com.activitytracking.activity.dto.request.ActivityEntryRequest;
 import com.activitytracking.activity.dto.response.ActivityEntryResponse;
 import com.activitytracking.activity.entity.ActivityEntry;
@@ -14,6 +15,7 @@ import com.activitytracking.user.entity.User;
 import com.activitytracking.user.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -78,18 +80,26 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
     }
 
     @Override
-    public ActivityEntryResponse getById(Long id) {
+    public ActivityEntryResponse getById(Long id, Long requestingUserId, boolean canViewTeam) {
         ActivityEntry entry = activityEntryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Activity entry not found with id: " + id));
+
+        assertCanView(entry, requestingUserId, canViewTeam);
+
         return toResponseDto(entry);
     }
 
     @Override
     public List<ActivityEntryResponse> getByFilters(
-            Long userId, LocalDate date, Long activityTypeId, Long activitySubjectId) {
+            ActivityEntryFilter filter, Long requestingUserId, boolean canViewTeam) {
 
-        Specification<ActivityEntry> spec = ActivityEntrySpecification.withFilters(
-                userId, date, activityTypeId, activitySubjectId);
+        if (filter.fromDate() != null && filter.toDate() != null && filter.fromDate().isAfter(filter.toDate())) {
+            throw new IllegalArgumentException("fromDate must not be after toDate");
+        }
+
+        ActivityEntryFilter effectiveFilter = scopeFilterToCaller(filter, requestingUserId, canViewTeam);
+
+        Specification<ActivityEntry> spec = ActivityEntrySpecification.withFilters(effectiveFilter);
 
         return activityEntryRepository.findAll(spec).stream()
                 .map(this::toResponseDto)
@@ -97,10 +107,14 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
     }
 
     @Override
-    public ActivityEntryResponse update(Long id, ActivityEntryRequest request) {
+    public ActivityEntryResponse update(Long id, ActivityEntryRequest request, Long requestingUserId) {
 
         ActivityEntry entry = activityEntryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Activity entry not found with id: " + id));
+
+        // Editing is always owner-only, regardless of ACTIVITY_VIEW_TEAM: a manager can
+        // see the team's entries, but only the owner can change their own logged work.
+        assertIsOwner(entry, requestingUserId);
 
         if (!request.getEndTime().isAfter(request.getStartTime())) {
             throw new IllegalArgumentException("End time must be later than start time");
@@ -133,11 +147,46 @@ public class ActivityEntryServiceImpl implements ActivityEntryService {
     }
 
     @Override
-    public void delete(Long id) {
-        if (!activityEntryRepository.existsById(id)) {
-            throw new EntityNotFoundException("Activity entry not found with id: " + id);
-        }
+    public void delete(Long id, Long requestingUserId) {
+        ActivityEntry entry = activityEntryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Activity entry not found with id: " + id));
+
+        assertIsOwner(entry, requestingUserId);
+
         activityEntryRepository.deleteById(id);
+    }
+
+    // A caller with ACTIVITY_VIEW_TEAM can read anyone's entries (their explicit userId
+    // filter, or everyone's if they didn't specify one). Anyone else is silently scoped
+    // to their own data, and gets rejected if they explicitly asked for someone else's.
+    private ActivityEntryFilter scopeFilterToCaller(
+            ActivityEntryFilter filter, Long requestingUserId, boolean canViewTeam) {
+
+        if (canViewTeam) {
+            return filter;
+        }
+
+        if (filter.userId() != null && !filter.userId().equals(requestingUserId)) {
+            throw new AccessDeniedException("You can only view your own activity entries");
+        }
+
+        return new ActivityEntryFilter(
+                requestingUserId, filter.date(), filter.fromDate(), filter.toDate(),
+                filter.activityTypeId(), filter.activitySubjectId());
+    }
+
+    private void assertCanView(ActivityEntry entry, Long requestingUserId, boolean canViewTeam) {
+        boolean isOwner = entry.getUser().getId().equals(requestingUserId);
+
+        if (!isOwner && !canViewTeam) {
+            throw new AccessDeniedException("You can only view your own activity entries");
+        }
+    }
+
+    private void assertIsOwner(ActivityEntry entry, Long requestingUserId) {
+        if (!entry.getUser().getId().equals(requestingUserId)) {
+            throw new AccessDeniedException("You can only modify your own activity entries");
+        }
     }
 
     private void checkForOverlap(Long userId, LocalDate date, LocalTime newStart, LocalTime newEnd, Long excludeEntryId) {

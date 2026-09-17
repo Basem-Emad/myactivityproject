@@ -48,7 +48,7 @@ class DashboardServiceImplTest {
         user.setId(1L);
         user.setName("Ahmed Yehia");
         user.setEmail("ahmed@myproject.com");
-        user.setRole(Role.EMPLOYEE);
+        user.setRole(Role.builder().id(1L).name("EMPLOYEE").build());
         user.setActive(true);
 
         projectType = ActivityType.builder().id(1L).name("Project").active(true).build();

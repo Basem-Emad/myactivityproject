@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: activitytracking-db
+    environment:
+      POSTGRES_DB: myproject_db
+      POSTGRES_USER: myproject_user
+      POSTGRES_PASSWORD: myproject_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - myproject_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myproject_user -d myproject_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build: .
+    container_name: activitytracking-backend
+    depends_on:
+      postgres:
+        # wait for postgres to actually accept connections, not just for the
+        # container process to start (those are not the same thing)
+        condition: service_healthy
+    environment:
+      # Inside the Docker network, the DB is reachable by service name, on its
+      # container-internal port (5432) rather than the host-mapped one (5433).
+      DB_URL: jdbc:postgresql://postgres:5432/myproject_db
+      DB_USERNAME: myproject_user
+      DB_PASSWORD: myproject_pass
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in your environment or a .env file before running docker compose}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  myproject_pgdata:
