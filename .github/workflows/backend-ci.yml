@@ -20,10 +20,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
+          cache-dependency-path: backend/pom.xml
 
       - name: Build and run tests
         # Testcontainers needs Docker to spin up the real PostgreSQL container used by
         # the integration test; GitHub-hosted ubuntu-latest runners have Docker preinstalled.
+        working-directory: backend
         run: mvn -B clean verify
 
       - name: Upload test reports
@@ -31,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: surefire-reports
-          path: target/surefire-reports/
+          path: backend/target/surefire-reports/
