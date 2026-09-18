@@ -8,12 +8,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.activitytracking.user.constants.PermissionNames;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/activity-subjects")
+@RequestMapping("/api/v1/activity-subjects")
 @RequiredArgsConstructor
 @Tag(name = "Activity Subjects", description = "Manage Activity Subject master data")
 public class ActivitySubjectController {
@@ -21,11 +23,14 @@ public class ActivitySubjectController {
     private final ActivitySubjectService activitySubjectService;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('" + PermissionNames.MASTERDATA_MANAGE + "')")
     public ResponseEntity<ActivitySubjectResponse> create(@Valid @RequestBody ActivitySubjectRequest request) {
         ActivitySubjectResponse response = activitySubjectService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // Intentionally open to any authenticated user (not just Admin): every employee
+    // needs to see the active Activity Types/Subjects to log their own activities.
     @GetMapping
     public ResponseEntity<List<ActivitySubjectResponse>> getAll() {
         return ResponseEntity.ok(activitySubjectService.getAll());
@@ -37,6 +42,7 @@ public class ActivitySubjectController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('" + PermissionNames.MASTERDATA_MANAGE + "')")
     public ResponseEntity<ActivitySubjectResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody ActivitySubjectRequest request) {
@@ -44,6 +50,7 @@ public class ActivitySubjectController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('" + PermissionNames.MASTERDATA_MANAGE + "')")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         activitySubjectService.deactivate(id);
         return ResponseEntity.noContent().build();

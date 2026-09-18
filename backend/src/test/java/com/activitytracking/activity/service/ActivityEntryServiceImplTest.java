@@ -1,5 +1,6 @@
 package com.activitytracking.activity.service;
 
+import com.activitytracking.activity.dto.request.ActivityEntryFilter;
 import com.activitytracking.activity.dto.request.ActivityEntryRequest;
 import com.activitytracking.activity.dto.response.ActivityEntryResponse;
 import com.activitytracking.activity.entity.ActivityEntry;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -54,6 +56,7 @@ class ActivityEntryServiceImplTest {
     private ActivitySubject activitySubject;
     private ActivityEntryRequest request;
     private ActivityEntry existingEntry;
+    private Long otherUserId;
 
     @BeforeEach
     void setUp() {
@@ -61,7 +64,7 @@ class ActivityEntryServiceImplTest {
         user.setId(1L);
         user.setName("Ahmed Yehia");
         user.setEmail("ahmed@myproject.com");
-        user.setRole(Role.EMPLOYEE);
+        user.setRole(Role.builder().id(1L).name("EMPLOYEE").build());
         user.setActive(true);
 
         activityType = ActivityType.builder()
@@ -95,6 +98,8 @@ class ActivityEntryServiceImplTest {
         existingEntry.setEndTime(LocalTime.of(11, 0));
         existingEntry.setDurationMinutes(120);
         existingEntry.setTaskDescription("Working on backend API");
+
+        otherUserId = 2L;
     }
 
     // ---------- Duration calculation ----------
@@ -305,28 +310,89 @@ class ActivityEntryServiceImplTest {
     // ---------- getById ----------
 
     @Test
-    void getById_shouldReturnResponse_whenEntryExists() {
+    void getById_shouldReturnResponse_whenRequestedByOwner() {
         when(activityEntryRepository.findById(1L)).thenReturn(Optional.of(existingEntry));
 
-        ActivityEntryResponse response = activityEntryService.getById(1L);
+        ActivityEntryResponse response = activityEntryService.getById(1L, 1L, false);
 
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getTaskDescription()).isEqualTo("Working on backend API");
     }
 
     @Test
+    void getById_shouldReturnResponse_whenRequestedByManagerWithTeamViewPermission() {
+        when(activityEntryRepository.findById(1L)).thenReturn(Optional.of(existingEntry));
+
+        ActivityEntryResponse response = activityEntryService.getById(1L, otherUserId, true);
+
+        assertThat(response.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void getById_shouldThrowAccessDenied_whenRequestedByAnotherUserWithoutTeamView() {
+        when(activityEntryRepository.findById(1L)).thenReturn(Optional.of(existingEntry));
+
+        assertThatThrownBy(() -> activityEntryService.getById(1L, otherUserId, false))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
     void getById_shouldThrowException_whenEntryDoesNotExist() {
         when(activityEntryRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> activityEntryService.getById(99L))
+        assertThatThrownBy(() -> activityEntryService.getById(99L, 1L, false))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("not found");
+    }
+
+    // ---------- getByFilters: ownership scoping ----------
+
+    @Test
+    void getByFilters_shouldForceScopeToCaller_whenNoTeamViewAndNoUserIdGiven() {
+        ActivityEntryFilter filter = new ActivityEntryFilter(null, null, null, null, null, null);
+
+        when(activityEntryRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
+                .thenReturn(List.of(existingEntry));
+
+        List<ActivityEntryResponse> results = activityEntryService.getByFilters(filter, 1L, false);
+
+        assertThat(results).hasSize(1);
+    }
+
+    @Test
+    void getByFilters_shouldThrowAccessDenied_whenRequestingSomeoneElsesUserIdWithoutTeamView() {
+        ActivityEntryFilter filter = new ActivityEntryFilter(otherUserId, null, null, null, null, null);
+
+        assertThatThrownBy(() -> activityEntryService.getByFilters(filter, 1L, false))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getByFilters_shouldAllowAnyUserId_whenCallerHasTeamViewPermission() {
+        ActivityEntryFilter filter = new ActivityEntryFilter(otherUserId, null, null, null, null, null);
+
+        when(activityEntryRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class)))
+                .thenReturn(List.of(existingEntry));
+
+        List<ActivityEntryResponse> results = activityEntryService.getByFilters(filter, 1L, true);
+
+        assertThat(results).hasSize(1);
+    }
+
+    @Test
+    void getByFilters_shouldThrowException_whenFromDateAfterToDate() {
+        ActivityEntryFilter filter = new ActivityEntryFilter(
+                null, null, LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 1), null, null);
+
+        assertThatThrownBy(() -> activityEntryService.getByFilters(filter, 1L, false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("fromDate");
     }
 
     // ---------- update ----------
 
     @Test
-    void update_shouldRecalculateDurationAndSave_whenValid() {
+    void update_shouldRecalculateDurationAndSave_whenOwnerRequests() {
         request.setStartTime(LocalTime.of(13, 0));
         request.setEndTime(LocalTime.of(15, 30));
 
@@ -337,16 +403,26 @@ class ActivityEntryServiceImplTest {
                 .thenReturn(List.of(existingEntry));
         when(activityEntryRepository.save(any(ActivityEntry.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ActivityEntryResponse response = activityEntryService.update(1L, request);
+        ActivityEntryResponse response = activityEntryService.update(1L, request, 1L);
 
         assertThat(response.getDurationMinutes()).isEqualTo(150);
+    }
+
+    @Test
+    void update_shouldThrowAccessDenied_whenRequestedByNonOwner() {
+        when(activityEntryRepository.findById(1L)).thenReturn(Optional.of(existingEntry));
+
+        assertThatThrownBy(() -> activityEntryService.update(1L, request, otherUserId))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(activityEntryRepository, never()).save(any(ActivityEntry.class));
     }
 
     @Test
     void update_shouldThrowException_whenEntryDoesNotExist() {
         when(activityEntryRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> activityEntryService.update(99L, request))
+        assertThatThrownBy(() -> activityEntryService.update(99L, request, 1L))
                 .isInstanceOf(EntityNotFoundException.class);
 
         verify(activityEntryRepository, never()).save(any(ActivityEntry.class));
@@ -362,7 +438,7 @@ class ActivityEntryServiceImplTest {
                 .thenReturn(List.of(existingEntry));
         when(activityEntryRepository.save(any(ActivityEntry.class))).thenReturn(existingEntry);
 
-        activityEntryService.update(1L, request);
+        activityEntryService.update(1L, request, 1L);
 
         verify(activityEntryRepository, times(1)).save(any(ActivityEntry.class));
     }
@@ -370,19 +446,29 @@ class ActivityEntryServiceImplTest {
     // ---------- delete ----------
 
     @Test
-    void delete_shouldRemoveEntry_whenEntryExists() {
-        when(activityEntryRepository.existsById(1L)).thenReturn(true);
+    void delete_shouldRemoveEntry_whenRequestedByOwner() {
+        when(activityEntryRepository.findById(1L)).thenReturn(Optional.of(existingEntry));
 
-        activityEntryService.delete(1L);
+        activityEntryService.delete(1L, 1L);
 
         verify(activityEntryRepository, times(1)).deleteById(1L);
     }
 
     @Test
-    void delete_shouldThrowException_whenEntryDoesNotExist() {
-        when(activityEntryRepository.existsById(99L)).thenReturn(false);
+    void delete_shouldThrowAccessDenied_whenRequestedByNonOwner() {
+        when(activityEntryRepository.findById(1L)).thenReturn(Optional.of(existingEntry));
 
-        assertThatThrownBy(() -> activityEntryService.delete(99L))
+        assertThatThrownBy(() -> activityEntryService.delete(1L, otherUserId))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(activityEntryRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void delete_shouldThrowException_whenEntryDoesNotExist() {
+        when(activityEntryRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> activityEntryService.delete(99L, 1L))
                 .isInstanceOf(EntityNotFoundException.class);
 
         verify(activityEntryRepository, never()).deleteById(any());
