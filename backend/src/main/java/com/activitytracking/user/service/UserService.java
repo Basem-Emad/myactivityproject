@@ -9,7 +9,9 @@ import java.util.List;
 
 public interface UserService {
     List<UserResponseDto> listUsers();
+    UserResponseDto getUserById(Long id);
     UserResponseDto createUser(CreateUserRequestDto request);
     UserResponseDto updateUser(Long id, UpdateUserRequestDto request);
     UserResponseDto assignRole(Long id, AssignRoleRequestDto request);
+    void deleteUser(Long id);
 }

@@ -1,6 +1,5 @@
 package com.activitytracking.user.dto.request;
 
-import com.activitytracking.user.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,6 +20,6 @@ public class CreateUserRequestDto {
     @NotBlank(message = "Password is required")
     private String password;
 
-    @NotNull(message = "Role is required")
-    private Role role;
+    @NotNull(message = "Role id is required")
+    private Long roleId;
 }
