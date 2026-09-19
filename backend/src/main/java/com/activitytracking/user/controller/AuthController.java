@@ -1,8 +1,8 @@
 package com.activitytracking.user.controller;
 
-import com.activitytracking.security.JwtUtil;
 import com.activitytracking.user.dto.request.LoginRequestDto;
-import com.activitytracking.user.dto.response.LoginResponseDto;
+import com.activitytracking.user.dto.request.RefreshTokenRequestDto;
+import com.activitytracking.user.dto.response.AuthResponseDto;
 import com.activitytracking.user.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -12,23 +12,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtUtil jwtUtil;
 
-    public AuthController(AuthService authService, JwtUtil jwtUtil) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginRequestDto request) {
-        String token = authService.authenticate(request.getEmail(), request.getPassword());
-        String role = jwtUtil.extractRole(token);
+    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto request) {
+        return ResponseEntity.ok(authService.login(request.getEmail(), request.getPassword()));
+    }
 
-        LoginResponseDto response = new LoginResponseDto(token, request.getEmail(), role);
-        return ResponseEntity.ok(response);
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponseDto> refresh(@Valid @RequestBody RefreshTokenRequestDto request) {
+        return ResponseEntity.ok(authService.refresh(request.getRefreshToken()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequestDto request) {
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity.noContent().build();
     }
 }
