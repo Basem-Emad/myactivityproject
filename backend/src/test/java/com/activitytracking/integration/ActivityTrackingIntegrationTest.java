@@ -1,6 +1,7 @@
 package com.activitytracking.integration;
 
 import com.activitytracking.activity.dto.request.ActivityEntryRequest;
+import com.activitytracking.activity.repository.ActivityEntryRepository;
 import com.activitytracking.masterdata.entity.ActivitySubject;
 import com.activitytracking.masterdata.entity.ActivityType;
 import com.activitytracking.masterdata.entity.SubjectType;
@@ -12,24 +13,26 @@ import com.activitytracking.user.dto.response.AuthResponseDto;
 import com.activitytracking.user.entity.Permission;
 import com.activitytracking.user.entity.Role;
 import com.activitytracking.user.entity.User;
+import com.activitytracking.user.repository.PermissionRepository;
 import com.activitytracking.user.repository.RoleRepository;
 import com.activitytracking.user.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Set;
@@ -44,8 +47,12 @@ class ActivityTrackingIntegrationTest {
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
 
-    @Autowired
-    private TestRestTemplate restTemplate;
+    @Value("${local.server.port}")
+    private int port;
+
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     @Autowired
     private RoleRepository roleRepository;
@@ -60,7 +67,10 @@ class ActivityTrackingIntegrationTest {
     private ActivitySubjectRepository activitySubjectRepository;
 
     @Autowired
-    private com.activitytracking.user.repository.PermissionRepository permissionRepository;
+    private ActivityEntryRepository activityEntryRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -78,6 +88,8 @@ class ActivityTrackingIntegrationTest {
         // Fixtures are created directly through repositories, not through a mystery
         // seeded row: this test owns its own data and doesn't depend on migration
         // seed content (which the test has no known plaintext password for anyway).
+        // Permission names must match PermissionNames exactly (no suffix) since
+        // @PreAuthorize checks the literal authority string.
         Set<Permission> allPermissions = Set.of(
                 permission("USER_READ"), permission("USER_CREATE"),
                 permission("USER_UPDATE"), permission("USER_DELETE"),
@@ -85,12 +97,12 @@ class ActivityTrackingIntegrationTest {
         );
 
         adminRole = roleRepository.save(Role.builder()
-                .name("IT_ADMIN_" + System.nanoTime())
+                .name("IT_ADMIN")
                 .permissions(allPermissions)
                 .build());
 
         employeeRole = roleRepository.save(Role.builder()
-                .name("IT_EMPLOYEE_" + System.nanoTime())
+                .name("IT_EMPLOYEE")
                 .permissions(Set.of())
                 .build());
 
@@ -111,51 +123,60 @@ class ActivityTrackingIntegrationTest {
         userRepository.save(employee);
 
         projectType = activityTypeRepository.save(
-                ActivityType.builder().name("IT-Project-" + System.nanoTime()).active(true).build());
+                ActivityType.builder().name("IT-Project").active(true).build());
 
         subject = activitySubjectRepository.save(
                 ActivitySubject.builder()
-                        .name("IT-Subject-" + System.nanoTime())
+                        .name("IT-Subject")
                         .subjectType(SubjectType.PROJECT)
                         .active(true)
                         .build());
     }
 
+    @AfterEach
+    void tearDown() {
+        // Wipe everything this test class touches so each test starts from a clean
+        // slate. Order matters for FK constraints: activity entries before users
+        // (they reference users), users before roles (they reference roles),
+        // and permissions last (after the role_permissions join rows are gone).
+        activityEntryRepository.deleteAll();
+        userRepository.deleteAll();
+        activityTypeRepository.deleteAll();
+        activitySubjectRepository.deleteAll();
+        roleRepository.deleteAll();
+        permissionRepository.deleteAll();
+    }
+
     private Permission permission(String name) {
-        return permissionRepository.save(new Permission(null, name + "_" + System.nanoTime()));
+        return permissionRepository.findByName(name)
+                .orElseGet(() -> permissionRepository.save(new Permission(null, name)));
     }
 
     @Test
-    void unauthenticatedRequest_shouldBeRejected() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/api/v1/users", String.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    void unauthenticatedRequest_shouldBeRejected() throws Exception {
+        HttpResponse<String> response = sendGet("/api/v1/users", null);
+        assertThat(response.statusCode()).isEqualTo(401);
     }
 
     @Test
-    void login_shouldReturnWorkingAccessToken() {
+    void login_shouldReturnWorkingAccessToken() throws Exception {
         String accessToken = loginAndGetAccessToken("integration-admin@test.com", ADMIN_PASSWORD);
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/v1/users", HttpMethod.GET, authenticated(accessToken), String.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        HttpResponse<String> response = sendGet("/api/v1/users", accessToken);
+        assertThat(response.statusCode()).isEqualTo(200);
     }
 
     @Test
-    void employee_shouldNotBeAbleToDeleteUsers_dueToMissingPermission() {
+    void employee_shouldNotBeAbleToDeleteUsers_dueToMissingPermission() throws Exception {
         String employeeToken = loginAndGetAccessToken("integration-employee@test.com", EMPLOYEE_PASSWORD);
         User admin = userRepository.findByEmail("integration-admin@test.com").orElseThrow();
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/v1/users/" + admin.getId(), HttpMethod.DELETE,
-                authenticated(employeeToken), String.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        HttpResponse<String> response = sendDelete("/api/v1/users/" + admin.getId(), employeeToken);
+        assertThat(response.statusCode()).isEqualTo(403);
     }
 
     @Test
-    void admin_shouldBeAbleToCreateAndDeleteUsers() {
+    void admin_shouldBeAbleToCreateUsers() throws Exception {
         String adminToken = loginAndGetAccessToken("integration-admin@test.com", ADMIN_PASSWORD);
 
         CreateUserRequestDto createRequest = new CreateUserRequestDto();
@@ -164,27 +185,21 @@ class ActivityTrackingIntegrationTest {
         createRequest.setPassword("Whatever123!");
         createRequest.setRoleId(employeeRole.getId());
 
-        ResponseEntity<String> createResponse = restTemplate.exchange(
-                "/api/v1/users", HttpMethod.POST,
-                new HttpEntity<>(createRequest, authHeaders(adminToken)), String.class);
-
-        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        HttpResponse<String> response = sendPost("/api/v1/users", createRequest, adminToken);
+        assertThat(response.statusCode()).isEqualTo(201);
     }
 
     @Test
-    void employee_cannotViewAnotherEmployeesActivityEntries() {
+    void employee_cannotViewAnotherEmployeesActivityEntries() throws Exception {
         String employeeToken = loginAndGetAccessToken("integration-employee@test.com", EMPLOYEE_PASSWORD);
         User otherUser = userRepository.findByEmail("integration-admin@test.com").orElseThrow();
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                "/api/v1/activities?userId=" + otherUser.getId(), HttpMethod.GET,
-                authenticated(employeeToken), String.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        HttpResponse<String> response = sendGet("/api/v1/activities?userId=" + otherUser.getId(), employeeToken);
+        assertThat(response.statusCode()).isEqualTo(403);
     }
 
     @Test
-    void employee_canCreateAndReadTheirOwnActivityEntry() {
+    void employee_canCreateAndReadTheirOwnActivityEntry() throws Exception {
         String employeeToken = loginAndGetAccessToken("integration-employee@test.com", EMPLOYEE_PASSWORD);
 
         ActivityEntryRequest entryRequest = new ActivityEntryRequest();
@@ -195,38 +210,55 @@ class ActivityTrackingIntegrationTest {
         entryRequest.setActivitySubjectId(subject.getId());
         entryRequest.setTaskDescription("Integration test entry");
 
-        ResponseEntity<String> createResponse = restTemplate.exchange(
-                "/api/v1/activities", HttpMethod.POST,
-                new HttpEntity<>(entryRequest, authHeaders(employeeToken)), String.class);
+        HttpResponse<String> createResponse = sendPost("/api/v1/activities", entryRequest, employeeToken);
+        assertThat(createResponse.statusCode()).isEqualTo(201);
 
-        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-        ResponseEntity<String> listResponse = restTemplate.exchange(
-                "/api/v1/activities", HttpMethod.GET, authenticated(employeeToken), String.class);
-
-        assertThat(listResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(listResponse.getBody()).contains("Integration test entry");
+        HttpResponse<String> listResponse = sendGet("/api/v1/activities", employeeToken);
+        assertThat(listResponse.statusCode()).isEqualTo(200);
+        assertThat(listResponse.body()).contains("Integration test entry");
     }
 
-    private String loginAndGetAccessToken(String email, String password) {
+    private String loginAndGetAccessToken(String email, String password) throws Exception {
         LoginRequestDto loginRequest = new LoginRequestDto();
         loginRequest.setEmail(email);
         loginRequest.setPassword(password);
 
-        ResponseEntity<AuthResponseDto> response = restTemplate.postForEntity(
-                "/api/v1/auth/login", loginRequest, AuthResponseDto.class);
+        HttpResponse<String> response = sendPost("/api/v1/auth/login", loginRequest, null);
+        assertThat(response.statusCode()).isEqualTo(200);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        return response.getBody().getAccessToken();
+        AuthResponseDto authResponse = objectMapper.readValue(response.body(), AuthResponseDto.class);
+        assertThat(authResponse.getAccessToken()).isNotBlank();
+        return authResponse.getAccessToken();
     }
 
-    private HttpHeaders authHeaders(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        return headers;
+    private String url(String path) {
+        return "http://localhost:" + port + path;
     }
 
-    private HttpEntity<Void> authenticated(String accessToken) {
-        return new HttpEntity<>(authHeaders(accessToken));
+    private HttpResponse<String> sendGet(String path, String token) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url(path))).GET();
+        if (token != null) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sendPost(String path, Object body, String token) throws Exception {
+        String json = objectMapper.writeValueAsString(body);
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url(path)))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json));
+        if (token != null) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sendDelete(String path, String token) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(url(path))).DELETE();
+        if (token != null) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 }
